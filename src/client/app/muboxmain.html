@@ -1,0 +1,350 @@
+<div class="container-fluid">
+	<div class="row-fluid">
+		<div class="span12">
+			<div class="pull-right">
+				<div style="float:left;width:30px;">
+				<div ng-controller="NotificationCtrl">
+					<div class="dropdown">
+						<a class="dropdown-toggle"><span ng-class="{'badge':true, 'badge-important': notifications.length !== 0}">{{notifications.length}}</span></a>
+						
+						<ul class="dropdown-menu notif">
+							<li style="text-align:center"><a href="#/voting/{{useruid}}">Go to Voting Overview</a></li>
+							<li class="divider"></li>
+							<li ng-repeat="notification in notifications">
+								<a>
+									<table>
+										<tr>
+											<td>{{notification.message}}</td>
+											<td><a ng-click="closeAlert($index)"><i class="icon-remove"></i></a></td>
+										</tr>
+									</table>
+									<div ng-show="showAcceptRejectButtons(notification)">
+										<button type="button" class="btn" ng-click="accept($index)">Accept</button>
+										<button type="button" class="btn" ng-click="reject($index)">Reject</button>
+									</div>
+								</a>
+							</li>
+						</ul>
+					</div>
+				</div>
+				</div>
+				<div style="float:right;width:80px;">
+				<span>{{userName}}</span>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<div class="row-fluid" style="padding:5px;">
+		<div class="span2"></div>
+		<div class="span10">
+			
+			<div class="pull-right">
+				<input type="hidden" id="clipboardInput" name="clipboardInput"></input>
+				<!-- button type="button" class="btn" ng-click="syncCloudStorage()" ng-disabled="syncing"><i class="icon-repeat"></i>&nbsp;Resync with Cloud</button -->
+				<button type="button" class="btn" ng-click="toggleDeleted()" ng-show="!settings || !settings.disableShadow"><i class="icon-eye-open"></i>&nbsp;{{deletedVisible | getToggleDeletedLabel}}</button>
+				<button type="button" class="btn" ng-click="onPasteTopLevel()" ng-show="isPasteButtonTopLevelVisible()" title="Paste {{clipboardData.filename}} in this folder"><i class="icon-paste"></i>&nbsp;Paste</button>
+				<button type="button" class="btn" ng-click="onPasteSharedTopLevel()" ng-show="isPasteSharedButtonTopLevelVisible()" title="Paste {{clipboardData.filename}} in this folder (subject to voting)">
+					<i class="icon-paste"></i>&nbsp;Paste (Voting)</button>
+				<button type="button" class="btn" ng-click="onSuggestPasteTopLevel()" ng-show="isSuggestPasteButtonTopLevelVisible()" title="Suggest pasting {{clipboardData.filename}} in this folder (subject to voting)"><i class="icon-paste"></i>&nbsp;Suggest Paste</button>
+				<button type="button" class="btn" ng-click="onShowNewFolderModal()"><i class="icon-folder-close-alt"></i>&nbsp;New Folder</button>
+				<button type="button" class="btn" ng-click="onShowUploadModal()"><i class="icon-upload-alt"></i>&nbsp;Upload</button>
+				<button type="button" class="btn" ng-click="onLogOut()"><i class="icon-arrow-right"></i>&nbsp;Log Out</button>
+			</div>
+		</div>
+	</div>
+
+	<div class="row-fluid">
+		<div class="span2"></div>
+		<div class="span10">
+			<ul class="breadcrumb">
+				<li ng-repeat="navinfo in breadcrumbs | filter:onlyInactive"><a href="#{{navinfo.href}}">{{navinfo.name}}</a><span class="divider">/</span></li>
+				<li ng-repeat="navinfo in breadcrumbs | filter:onlyActive" class="active">{{navinfo.name}}</li>
+			</ul>	
+		</div>
+	</div>
+	
+	<div class="row-fluid">
+		<div class="span2">
+			<p ng-show="!settings || !settings.disableActivityView"><a href="#/activity{{parentPath}}">Activity View</a></p>
+			<p ng-show="!settings || !settings.disableVoting"><a href="#/voting/{{useruid}}">Voting Overview</a></p>
+			<br/><br/>
+			
+			<!-- div style="background-color: #0088cc;">blah</div--> <!-- The nice blue color in bootstrap dropdown menu -->
+		</div>
+
+		<div class="span10">
+			<div class="row-fluid" id="toolbar" style="background-color:aliceblue;padding-top:3px;padding-bottom:3px;" ng-show="currentFile">
+				<div class="span2"> <span style="font-weight:bold;vertical-align:-5px;">&nbsp; {{currentFile.filename}}</span> </div>
+				<div class="span10">
+					<div class="pull-right">
+						<a 					  class="btn" ng-show="isDownloadButtonVisible()" href="{{currentFile | fileFolderLink }}" target="_blank"><i class="icon-download-alt"></i>&nbsp;Download</a>
+						<button type="button" class="btn" ng-show="isRestoreButtonVisible()" ng-click="restoreFile()"><i class="icon-undo"></i>&nbsp;{{restoreButtonLabel}}</button>
+						<button type="button" class="btn" ng-show="isShareFolderButtonVisible()" ng-click="showShareFolderModal()"><i class="icon-share"></i>&nbsp;Share Folder</button>
+						<button type="button" class="btn" ng-show="isManageSharedFolderButtonVisible()" ng-click="showManageSharedFolderModal()"><i class="icon-share"></i>&nbsp;Manage Shared Folder</button>
+						<button type="button" class="btn" ng-show="isShowVersionsButtonVisible()" ng-click="onShowVersions()"><i class="icon-list-ol"></i>&nbsp;Show Versions</button>
+						<button type="button" class="btn" ng-show="isDeleteButtonVisible()" ng-click="doDeletion('delete')"><i class="icon-remove"></i>&nbsp;Delete</button>
+						<button type="button" class="btn" ng-show="isDeleteSharedButtonVisible()" ng-click="doDeletion('deleteshared')"><i class="icon-remove"></i>&nbsp;Delete (voting)</button>
+						<button type="button" class="btn" ng-show="isSuggestDeleteButtonVisible()" ng-click="doDeletion('suggestdelete')"><i class="icon-remove"></i>&nbsp;Suggest Delete</button>
+						<button type="button" class="btn" ng-show="isRenameButtonVisible()" ng-click="renameFile()"><i class="icon-edit"></i>&nbsp;Rename</button>
+						<button type="button" class="btn" ng-show="isRenameSharedButtonVisible()" ng-click="renameSharedFile()"><i class="icon-edit"></i>&nbsp;Rename (voting)</button>
+						<button type="button" class="btn" ng-show="isSuggestRenameButtonVisible()" ng-click="suggestRenameFile()"><i class="icon-edit"></i>&nbsp;Suggest Rename</button>
+						<button type="button" class="btn" ng-show="isCutButtonVisible()" ng-click="cutFile()"><i class="icon-cut"></i>&nbsp;Cut</button>
+						<button type="button" class="btn" ng-show="isCopyButtonVisible()" ng-click="copyFile()"><i class="icon-copy"></i>&nbsp;Copy</button>
+						<button type="button" class="btn" ng-show="isCancelVoteButtonVisible()" ng-click="cancelVote()"><i class="icon-remove-sign"></i>&nbsp;Cancel Vote</button>
+						
+						<!-- button type="button" class="btn" ng-show="isPasteButtonCurrentVisible()" ng-click="onPasteCurrent()"><i class="icon-paste"></i>&nbsp;Paste</button>
+						<button type="button" class="btn" ng-show="isPasteSharedButtonCurrentVisible()" ng-click="onPasteSharedCurrent()"><i class="icon-paste"></i>&nbsp;Paste (voting)</button>
+						<button type="button" class="btn" ng-show="isSuggestPasteButtonCurrentVisible()" ng-click="onSuggestPasteCurrent()"><i class="icon-paste"></i>&nbsp;Suggest Paste</button-->
+					</div>						
+				</div>
+			</div>
+			<div class="row-fluid">
+				<div class="span12">
+					<!-- table class="table table-striped"-->
+					<div id="dragDiv" name="dragDiv" style="border-color:white;border-style:solid;border-width:0.3em;">
+					<table class="table" id="filelisttable">
+						<tr ng-show="!currentFile" style="background-color:aliceblue;">
+							<th>Name</th>
+							<th>Kind</th>
+							<th>Last change</th>
+						</tr>
+						<tr ng-repeat="file in ref.fileList" ng-click="setCurrent({{file}})" ng-right-click="showMenu($event, file)"  style="transition:background-color 1000ms;{{file | isDeletedAndCurrentStyle:currentFile }}" 
+							ng-show="!file.isDeleted || (deletedVisible && !settings.disableShadow)">
+							<td>		
+								<img ng-src="{{file | fileFolderIconSrc}}"></img> &nbsp; <a href="{{file | fileFolderLink }}" style="{{file.isDeleted | isDeletedStyle}}" target="{{file.isDir | fileFolderTarget }}">{{file.filename}}</a>
+							</td>
+							<td>
+								<div style="float:left;width:80px;">
+									{{file | getFileKind }}
+								</div>
+								<!-- For tooltip, also css styles were modified in app.css -->
+								<!-- a tooltip-html-unsafe="{{file | getSharedUsersHtml:file.path}}" tooltip-trigger="click">{{file | getSharedUsersText}}</a-->
+								<div style="float: left; width:130px;">
+									<div style="float:left;width:70px;">
+										<div class="dropdown">
+											<a class="dropdown-toggle">{{file | getSharedUsersText}}</a>
+											<ul class="dropdown-menu">
+												<li ng-repeat="sharedUser in file.sharedUsers">
+													<a href="#/activity{{file.path}}?username={{sharedUser.display_name}}">
+														<img ng-src="{{sharedUser.img}}"></img> {{sharedUser.display_name}}
+													</a>
+												</li>
+											</ul>
+										</div>
+									</div>
+									<div float="left;width:30px;">
+										<span ng-repeat="sharedUser in file.sharedUsers"> <img
+											ng-src="{{sharedUser.img}}"></img>
+										</span>
+									</div>
+								</div>
+							</td>
+							<td><span ng-show="!settings || !settings.disableShadow"> {{file.details}}</span> {{file.userName}} {{ file.date | formatDateAsAgo }} <span style="color:black" ng-show="!settings || !settings.disableShadow">{{file | locationLabel }}</span> 
+									<span ng-bind-html-unsafe="file.newLink" ng-show="!settings || !settings.disableShadow"></span> 
+							</td>
+						</tr>
+					</table>
+					</div>
+					
+					
+					<ul class="dropdown-menu" style="padding:2px;margin:2px;position:fixed;" ng-style="{display:contextMenuDisplay, left:contextMenuLeft, top:contextMenuTop}">
+						<li><a type="button" ng-show="isDownloadButtonVisible()" ng-click="directDownloadFile()"><i class="icon-download-alt"></i>&nbsp;Download</a></li>
+						<li><a type="button" ng-show="isRestoreButtonVisible()" ng-click="restoreFile()"><i class="icon-undo"></i>&nbsp;{{restoreButtonLabel}}</a></li>
+						<li><a type="button" ng-show="isShareFolderButtonVisible()" ng-click="showShareFolderModal()"><i class="icon-share"></i>&nbsp;Share Folder</a></li>
+						<li><a type="button" ng-show="isManageSharedFolderButtonVisible()" ng-click="showManageSharedFolderModal()"><i class="icon-share"></i>&nbsp;Manage Shared Folder</a></li>
+						<li><a type="button" ng-show="isShowVersionsButtonVisible()" ng-click="onShowVersions()"><i class="icon-list-ol"></i>&nbsp;Show Versions</a></li>
+						<li><a type="button" ng-show="isDeleteButtonVisible()" ng-click="doDeletion('delete')"><i class="icon-remove"></i>&nbsp;Delete</a></li>
+						<li><a type="button" ng-show="isDeleteSharedButtonVisible()" ng-click="doDeletion('deleteshared')"><i class="icon-remove"></i>&nbsp;Delete (voting)</a></li>
+						<li><a type="button" ng-show="isSuggestDeleteButtonVisible()" ng-click="doDeletion('suggestdelete')"><i class="icon-remove"></i>&nbsp;Suggest Delete</a></li>
+						<li><a type="button" ng-show="isRenameButtonVisible()" ng-click="renameFile()"><i class="icon-edit"></i>&nbsp;Rename</a></li>
+						<li><a type="button" ng-show="isRenameSharedButtonVisible()" ng-click="renameSharedFile()"><i class="icon-edit"></i>&nbsp;Rename (voting)</a></li>
+						<li><a type="button" ng-show="isSuggestRenameButtonVisible()" ng-click="suggestRenameFile()"><i class="icon-edit"></i>&nbsp;Suggest Rename</a></li>
+						<li><a type="button" ng-show="isCutButtonVisible()" ng-click="cutFile()"><i class="icon-cut"></i>&nbsp;Cut</a></li>
+						<li><a type="button" ng-show="isCopyButtonVisible()" ng-click="copyFile()"><i class="icon-copy"></i>&nbsp;Copy</a></li>
+						<li><a type="button" ng-show="isCancelVoteButtonVisible()" ng-click="cancelVote()"><i class="icon-remove-sign"></i>&nbsp;Cancel Vote</a></li>
+						
+						<!-- li><a type="button" ng-show="isPasteButtonCurrentVisible()" ng-click="onPasteCurrent()"><i class="icon-paste"></i>&nbsp;Paste</a></li>
+						<li><a type="button" ng-show="isPasteSharedButtonCurrentVisible()" ng-click="onPasteSharedCurrent()"><i class="icon-paste"></i>&nbsp;Paste (voting)</a></li>
+						<li><a type="button" ng-show="isSuggestPasteButtonCurrentVisible()" ng-click="onSuggestPasteCurrent()"><i class="icon-paste"></i>&nbsp;Suggest Paste</a></li-->
+					</ul>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- div class="notifications bottom-right">
+		<div ng-controller="NotificationCtrl">
+			<alert ng-repeat="notification in notifications" type="info" class="alert-info" close="closeAlert($index)"> 
+				<p>
+					{{notification.message}}
+				</p>
+				<div ng-show="showAcceptRejectButtons(notification)">
+					<button type="button" class="btn" ng-click="accept($index)">Accept</button>
+					<button type="button" class="btn" ng-click="reject($index)">Reject</button>
+				</div>
+			</alert>
+		</div>
+	</div-->
+
+	<div class="modal hide fade" id="shareFolderModal">
+		<div class="modal-header">
+			<button type="button" class="close" data-dismiss="modal"
+				aria-hidden="true">&times;</button>
+			<h3>{{shareFolderModalTitle}}</h3>
+		</div>
+		<div class="modal-body">
+			<div class="container-fluid">
+				<div class="row-fluid">
+					<h4>{{userListTitle}}</h4>
+					<p>
+						<select class="multiselect" multiple="multiple"
+							ng-model="selectedUserList"
+							ng-options="user.uid as user.display_name for user in userList"></select>
+					</p>
+				</div>
+				<div class="row-fluid">
+					<div class="span6">
+						<h4>Select a voting scheme:</h4>
+						<p>
+							<select ng-model="selectedVotingScheme" ng-options="scheme.name as scheme.label for scheme in votingSchemes"></select>
+						</p>
+					</div>
+					<div class="span6">
+						<div ng-show="isTimePeriodVisible()">
+							<h4>Time constraint:</h4>
+							<input type="number" class="input-small" ng-model="numTimeUnits"></input> 
+							<select ng-model="timeUnit" class="input-small">
+								<option value="1">minutes</option>
+								<option value="60">hours</option>
+								<option value="1440">days</option>
+							</select>
+						</div>
+						<div ng-show="isPercentUsersVisible()">
+							<h4>Percent of users:</h4>
+							<input type="number" class="input-small" ng-model="percentUsers"></input> %
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<div class="modal-footer">
+			<button type="button" class="btn" ng-click="shareFolder()" ng-disabled="disableShareUpdateFolderButton()">{{shareUpdateFolderLabel}}</button>
+		</div>
+	</div>
+
+	<div class="modal hide fade" id="renameModal">
+		<div class="modal-header">
+			<button type="button" class="close" data-dismiss="modal"
+				aria-hidden="true">&times;</button>
+			<h3>{{renameDialogHeader}}</h3>
+		</div>
+		<div class="modal-body">
+			<p>
+				<input id="newname" ng-model="newFileName" placeholder="New name"
+					type="text" ui-keypress="{13:'renameEnterPress($event)'}"></input>
+			</p>
+		</div>
+		<div class="modal-footer">
+			<button type="button" class="btn" ng-click="saveNewName()">Save</button>
+		</div>
+	</div>
+
+	<div class="modal hide fade" id="uploadModal">
+		<div class="modal-header">
+			<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			<h3>File Upload</h3>
+		</div>
+		<div class="modal-body">
+			<form id="uploadForm" action="/upload" method="POST"
+				enctype="multipart/form-data">
+				<fieldset>
+					<!-- legend>File upload</legend-->
+					<input type="hidden" id="parentpath" name="parentpath" value="/" />
+					<div>
+						<!-- label for="fileselect">Files to upload:</label-->
+						<!-- input type="file" id="fileselect" name="fileselect" /-->
+						<div id="filedrag">Drop a file here</div>
+					</div>
+					<!-- div id="submitbutton">
+						<button type="submit" name="uploadButton" id="uploadButton">Upload Files</button>
+					</div-->
+				</fieldset>
+			</form>
+			<div id="messages"></div>
+		</div>
+		<div class="modal-footer"></div>
+	</div>
+	
+	<div class="modal hide fade" id="spinnerModal">
+		<div class="modal-body">
+			<span class="spinner" style="text-align:center;"><h1><i class="icon-spin icon-refresh"></i></h1></span>
+		</div>
+	</div>
+
+	<div class="modal hide fade" id="newFolderModal">
+		<div class="modal-header">
+			<button type="button" class="close" data-dismiss="modal"
+				aria-hidden="true">&times;</button>
+			<h3>Folder name:</h3>
+		</div>
+		<div class="modal-body">
+			<p>
+				<input id="newFolderInput" ng-model="newFolderName"
+					placeholder="Folder name" type="text" ui-keypress="{13:'newFolderEnterPress($event)'}"></input>
+			</p>
+		</div>
+		<div class="modal-footer">
+			<button type="button" class="btn" ng-click="onNewFolder()">Create</button>
+		</div>
+	</div>
+
+	<!-- votingDialog is not used now, superceded by -->
+	<!-- div class="modal hide fade" id="votingDialog" style="width: 700px;">
+		<div class="modal-header">
+			<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			<h3>Vote on the latest changes:</h3>
+		</div>
+		<div class="modal-body">
+			<table class="table">
+				<tr>
+					<th>User</th>
+					<th>Action</th>
+					<th>Path</th>
+					<th>New Path</th>
+					<th></th>
+					<th></th>
+				</tr>
+				<tr ng-repeat="voting in votingList">
+					<td>{{voting.initiatorName}}</td>
+					<td>{{voting.action | getVotingAction }}</td>
+					<td>{{voting.path}}</td>
+					<td>{{voting.newPath}}</td>
+					<td><button type="button" class="btn"
+							ng-click="accept(voting)">Accept</button></td>
+					<td><button type="button" class="btn"
+							ng-click="reject(voting)">Reject</button></td>
+				</tr>
+			</table>
+		</div>
+	</div-->
+	
+	<div class="row-fluid" ng-show="!ref.fileList || ref.fileList.length == 0">
+		<div class="span5"></div>
+		<div class="span3" style="" id="divDirectoryEmpty">
+			<h3 style="text-align: center">No files</h3>
+		</div>
+	</div>
+
+</div> <!-- End container-fluid -->
+
+
+
+
+		
+
+
+
+
+

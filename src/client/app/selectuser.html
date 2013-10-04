@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="selectUserApp">
+	<head profile="http://www.w3.org/2005/10/profile">
+	<link rel="icon" 
+      type="image/x-icon" 
+      href="img/favicon1.ico">
+		<meta charset="utf-8">
+		<title>Select user</title>
+		 <link rel="stylesheet" href="css/bootstrap.css">
+		 <script src="lib/angular/angular.js"></script>
+		 <script src="lib/bootstrap.min.js"></script>
+		 <script src="js/selectUserApp.js"></script>
+	</head>
+	<body ng-controller="SelectUserCtrl">
+		<div class="fluid-container">
+			<div class="fluid-row">
+				<div class="span12">
+					<p>Logging into {{provider}}.<p>
+					<p>You can either select one of the existing users or click 'Go' and log in as yourself:</p>	
+					<div class="form-horizontal">
+						<select ng-model="currentUid" ng-options="user.uid as user.display_name for user in userList"></select>
+						<button type="button" class="btn" ng-click="onGoBtnClick()">Go</button>
+					</div>
+					<p>
+						<span>Current UID: {{currentUid }}</span>
+					</p>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>

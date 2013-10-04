@@ -1,0 +1,33 @@
+<div class="container-fluid">
+	<div class="row-fluid">
+		<div class="span2">
+			
+		</div>
+		<div class="span10">
+			<table class="table">
+				<tr>
+					<th ng-repeat="title in titles">{{title}}</th>
+				</tr>
+				<tr ng-repeat="vote in votingList | orderBy:predicate" style="{{vote | setOpenVoteStyle}}">
+					<td>{{vote.action}} 
+						<div style="float:left;width:200px;" ng-show="vote.voted === false">
+							<button class="btn" ng-click="accept(vote.votingID)">Accept</button>
+							<button class="btn" ng-click="reject(vote.votingID)">Reject</button>
+						</div>
+					</td>
+					<td>{{vote.initiatorName}}</td>
+					<td>{{vote.path}}</td>
+					<td>{{vote.newPath}}</td>
+					<td>{{vote.voted | getVotedMessage }}</td>
+					<td>{{vote.votesFor}}</td>
+					<td>{{vote.votesAgainst}}</td>
+					<td>{{vote.userCount}}</td>
+					<td>{{vote.scheme}}</td>
+					<td>{{vote.isAccepted | getAcceptedMessage}}</td>
+					<td><i class="icon-remove" ng-click="closeAlert(vote.votingID)" ng-style="{color: closeButtonColors[$index]}" 
+						ng-mouseover="mouseover($index)" ng-mouseout="mouseout($index)"></i></td>
+				</tr>
+			</table>
+		</div>
+	</div>
+</div>

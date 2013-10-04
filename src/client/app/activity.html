@@ -1,0 +1,71 @@
+<div class="container-fluid">
+	<div class="row-fluid">
+		<div class="span6">
+		</div>
+		<div class="span6">
+			<div class="pull-right">{{userName}}</div>
+		</div>
+	</div>
+	
+	<div class="row-fluid">
+		<div class="span2">
+			<a href="#{{path}}">File List View for {{path}}</a>
+		</div>
+		<div class="span10">
+			<h3>Activity view for {{path}}</h3>
+		</div>
+	</div>
+	
+	<div class="row-fluid">
+		<div class="span2">
+		</div>
+		<div class="span10">
+			<table class="table" id="searchObjResults">
+				<tr>
+					<th>
+						<a ng-click="toggleSorting('action')">Action&nbsp;<img ng-src="{{orderImgs['action']}}"></a>
+					</th>
+					<th>
+						<a ng-click="toggleSorting('filename')">Filename&nbsp;<img ng-src="{{orderImgs['filename']}}"></a>
+					</th>
+					<th>
+						<a ng-click="toggleSorting('userName')">Username&nbsp;<img ng-src="{{orderImgs['userName']}}"></a>
+					</th>
+					<th>
+						<a ng-click="toggleSorting('date')">Date&nbsp;<img ng-src="{{orderImgs['date']}}"></a>
+					</th>
+					<th>
+						<a ng-click="toggleSorting('details')">Details&nbsp;<img ng-src="{{orderImgs['details']}}"></a>
+					</th>
+				</tr>
+				<tr>
+					<th><input  style="width:110px;" type="text" ng-model="search.action"></th>
+					<th><input type="text" ng-model="search.filename"></th>
+					<th><input  style="width:110px;" type="text" ng-model="search.userName"></th>
+					<th>
+						<span style="float:left;width:40px;">From:</span> 
+						<input style="float:left;width:70px;" ui-date="{ dateFormat: 'dd.mm.y' }" ng-model="search.dateFrom"></input> 
+						
+						<div style="float:right;">
+							<span style="float:left;width:22px;">To:</span>
+							<input style="float:left;width:70px;" ui-date="{ dateFormat: 'dd.mm.y' }" ng-model="search.dateTo"></input> <!-- use 'd M, y' for month as word -->
+							
+							<!-- input style="float:left;width:70px;" ui-date ui-date-format="dd.mm.y" ng-model="search.dateTo"></input-->
+							<!-- Found a comment here: https://github.com/angular-ui/ui-date#ui-date-format-directive , but it didn't work for me-->
+						</div>
+					</th>
+					<th><input type="text" ng-model="search.details"></th>
+				</tr>
+				
+				<tr ng-repeat="activity in activityList | filterActivities:search | orderBy:predicate:reverse">
+					<td><i class="{{activity.action | getActivityIcon}}"></i> {{activity.action}}</td>
+					<td ><a href="javascript:void(0)" class="filenamecell" data-toggle="tooltip" title="{{activity.path}}">{{activity.filename}}</a></td> 
+					<td><img ng-src="{{activity.img}}"></img> {{activity.userName}}</td>
+					<td>{{activity.date | date:'dd.MM.yyyy h:mm a' }}</td> <!-- to show time zone and 24h format: date:'yyyy-MM-dd HH:mm Z' -->
+					<!-- td>{{activity.date | formatDate }}</td--> 
+					<td>{{activity.details}}</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+</div>
