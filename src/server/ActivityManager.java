@@ -21,19 +21,29 @@ import server.model.FileEntry;
 import server.model.User;
 
 /**
- * Manages the data displayed in the activity view 
+ * Manages the data displayed in the activity view. 
  */
 public class ActivityManager {
 	private static final String FILEDATA = "filedata";
+	private DatabaseManager dbManager;
+	private UserManager userManager;
 	
-	DatabaseManager dbManager;
-	UserManager userManager;
-	
+	/**
+	 * Constructs an instance of an ActivityManager
+	 * @param dbManager A reference to {@link DatabaseManager}
+	 * @param userManager A reference to {@link UserManager} 
+	 */
 	public ActivityManager(DatabaseManager dbManager, UserManager userManager) {
 		this.dbManager = dbManager;
 		this.userManager = userManager;
 	}
-			
+
+	/**
+	 * Retrieves a list of activities
+	 * 
+	 * @param path Path to the folder, for which to list activities
+	 * @param userUid User UID.
+	 */
 	public List<FileActivity> listActivities(String path, String userUid) {
 		int topN = 100;
 		String pathPart = "/".equals(path) ? "/" : path + "/";

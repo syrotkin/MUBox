@@ -4,6 +4,10 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 
+/**
+ * Generates unique IDs for shared folders and voting. This class retrieved the previously stored unique ID, increments it by 1, and stores the result in the database.
+ *
+ */ 
 public class UniqueIDGenerator {
 	
 	private static final String UNIQUEIDS = "uniqueids";
@@ -19,7 +23,7 @@ public class UniqueIDGenerator {
 		DBCollection folderseq = dbManager.getCollection(UNIQUEIDS);
 		BasicDBObject query = new BasicDBObject("_id", collection);
 		BasicDBObject update = new BasicDBObject("$inc", new BasicDBObject(UNIQUEID, 1L));
-		DBObject result = folderseq.findAndModify(query, null, null, false, update, false, false); // only update, and return the old value, like C++
+		DBObject result = folderseq.findAndModify(query, null, null, false, update, false, false); // only update, and return the old value, like i++
 		long newID = (long)result.get(UNIQUEID);
 		return newID;
 	}

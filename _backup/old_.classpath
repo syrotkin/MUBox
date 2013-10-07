@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
+	<classpathentry kind="lib" path="C:/Users/soleksiy/Downloads/installers/spark/spark-dependencies_0.9.9.3_and_newer/servlet-api-3.0.pre4.jar"/>
+	<classpathentry kind="lib" path="C:/Users/soleksiy/Downloads/installers/spark/spark-dependencies_0.9.9.3_and_newer/log4j-1.2.14.jar"/>
+	<classpathentry kind="lib" path="C:/Users/soleksiy/Downloads/installers/spark/spark-dependencies_0.9.9.3_and_newer/slf4j-api-1.6.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/soleksiy/Downloads/installers/spark/spark-dependencies_0.9.9.3_and_newer/slf4j-log4j12-1.6.1.jar"/>
+	<classpathentry kind="lib" path="C:/dev/test/NewSpark/bin/spark-0.9.9.6.jar"/>
+	<classpathentry kind="lib" path="C:/Users/soleksiy/Downloads/installers/spark/jetty-webapp-9.0.0.v20130308.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

@@ -6,14 +6,26 @@ import org.json.simple.JSONObject;
 import server.data.NoWarningJSONArray;
 import server.data.NoWarningJSONObject;
 
+/**
+ * Manages breadcrumb data, for displaying the breadcrumb navigation in the MUBox folder view. 
+ */
 public class Breadcrumb {
 	public String href;
 	public String name;
 	public boolean active;
 
+	/**
+	 * Constructs an instance of Breadcrumb 
+	 */
 	public Breadcrumb() {			
 	}
 	
+	/**
+	 * Constructs an instance of Breadcrumb with parameters
+	 * @param href Hyperlink to a given breadcrumb item
+	 * @param name Name of the given breadcrumb item
+	 * @param active True if the given breadcrumb item is selected (active). 
+	 */
 	public Breadcrumb(String href, String name, boolean active) {
 		this.href = href;
 		this.name = name;
