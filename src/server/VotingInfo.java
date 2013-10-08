@@ -3,7 +3,11 @@ package server;
 import java.util.List;
 
 import server.model.SharedFolder;
-
+/**
+ * Encapsulates the voting information to be inserted in the voting collection.
+ * @author soleksiy
+ *
+ */
 public class VotingInfo {
 	private List<SharedFolder> sharedFolders;
 	private long votingID;

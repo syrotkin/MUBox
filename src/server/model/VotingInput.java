@@ -3,7 +3,7 @@ package server.model;
 import com.mongodb.BasicDBObject;
 
 /**
- * Describes a voting request from the client side. 
+ * Describes voting information sent from the client side. 
  */
 public class VotingInput extends BasicDBObject {
 	private static final long serialVersionUID = 3095063024248237456L;

@@ -1,5 +1,9 @@
 package server;
-
+/**
+ * Stores web server information: protocol (most likely HTTP), server name, port number. Used for constructing URLs.
+ * @author soleksiy
+ *
+ */
 public class ServerInfo {
 	
 	private static Object lock = new Object();

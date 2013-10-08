@@ -1,7 +1,11 @@
 package server;
 
 import java.io.InputStream;
-
+/**
+ * Represents information about a downloaded file.
+ * @author soleksiy
+ *
+ */
 public class FileInfo {
 	private String name;
 	private String mimeType;

@@ -9,7 +9,11 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
-
+/**
+ * Class for operations on shared folders. Mostly interacts with the sharedfolders collection.
+ * @author soleksiy
+ *
+ */
 public class SharedFolderManager {
 	// Collections (tables)
 	private static final String SHARED_FOLDERS = "sharedfolders";
@@ -22,7 +26,11 @@ public class SharedFolderManager {
 	public SharedFolderManager(DatabaseManager dbManager) {
 		this.dbManager = dbManager;
 	}
-		
+	/**
+	 * Gets shared folder records for a given ID. (There is one shared folder record per shared folder user, all of them have the same ID).
+	 * @param sharedFolderID
+	 * @return List of shared folders
+	 */
 	public List<SharedFolder> getSharedFolders(long sharedFolderID) {
 		List<SharedFolder> result = new ArrayList<SharedFolder>();
 		DBCollection sharedFolders = dbManager.getCollection(SHARED_FOLDERS, SharedFolder.class);
@@ -35,7 +43,12 @@ public class SharedFolderManager {
 		}
 		return result;
 	}
-	
+	/**
+	 * For a given user UID and path, get the shared folder ID.
+	 * @param userUid
+	 * @param path
+	 * @return Shared folder ID
+	 */
 	public long getSharedFolderIDForUser(String userUid, String path) {
 		SharedFolder folder = getSharedFolderForUser(userUid, path);
 		if (folder == null) {
@@ -45,7 +58,12 @@ public class SharedFolderManager {
 			return folder.getSharedFolderID();
 		}
 	}
-	
+	/**
+	 * For a given user UID and path, get the shared folder.
+	 * @param userUid
+	 * @param path
+	 * @return Shared folder
+	 */
 	public SharedFolder getSharedFolderForUser(String userUid, String path) {
 		DBCollection sharedFolders = dbManager.getCollection(SHARED_FOLDERS, SharedFolder.class);
 		BasicDBObject query = new BasicDBObject(UID, userUid);
@@ -69,12 +87,20 @@ public class SharedFolderManager {
 		return null;
 	}
 	
-	//http://shiflett.org/blog/2010/jul/auto-increment-with-mongodb
+	/**
+	 * Gets the next sequential ID for a shared folder.
+	 * Idea: http://shiflett.org/blog/2010/jul/auto-increment-with-mongodb 
+	 * @return Next shared folder ID
+	 */
 	public long getNextSharedFolderID() {
 		UniqueIDGenerator creator = new UniqueIDGenerator(this.dbManager);
 		return creator.getUniqueID(SHARED_FOLDERS);
 	}
-	
+	/**
+	 * Lists user UIDs for a given shared folder ID
+	 * @param sharedFolderID Shared folder ID
+	 * @return List of user UIDs.
+	 */
 	public List<String> listUserUids(long sharedFolderID) {
 		DBCollection sharedFolders = dbManager.getCollection(SHARED_FOLDERS);
 		BasicDBObject query = new BasicDBObject(SEQ, sharedFolderID);
@@ -88,7 +114,11 @@ public class SharedFolderManager {
 		}
 		return userUids;
 	}
-
+	/**
+	 * Inserts or updates the shared folders that are passed as arguments.
+	 * @param folders List of shared folders
+	 * @return The shared folder ID used by the inserted/updated shared folders.
+	 */
 	public long insertSharedFolders(List<SharedFolder> folders) {
 		System.out.println("Enter SharedFolderManager.insertSharedFolders");
 		long newID = getNextSharedFolderID();

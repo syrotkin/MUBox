@@ -1,5 +1,9 @@
 package server;
-
+/**
+ * Encapsulates voting scheme information.
+ * @author soleksiy
+ *
+ */
 public class VotingScheme {
 	private String name;
 	private int periodInMinutes;

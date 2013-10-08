@@ -3,7 +3,11 @@ package server.model;
 import java.util.Date;
 
 import com.mongodb.BasicDBObject;
-
+/**
+ * Represents a voting process, which is stored in the "voting" collection.
+ * @author soleksiy
+ *
+ */
 public class Voting extends BasicDBObject {
 	
 	private static final String _ID = "_id";
@@ -47,7 +51,9 @@ public class Voting extends BasicDBObject {
 	public void setVotesFor(int votesFor) {
 		put(VOTES_FOR, votesFor);
 	}
-	// TODO: this is not atomic
+	/**
+	 * TODO: this is not atomic
+	 */
 	public void incVotesFor() {
 		int prev =  getInt(VOTES_FOR);
 		put(VOTES_FOR, ++prev);
@@ -59,7 +65,9 @@ public class Voting extends BasicDBObject {
 	public void setVotesAgainst(int votesAgainst) {
 		put(VOTES_AGAINST, votesAgainst);
 	}
-	// TODO: not atomic
+	/**
+	 * TODO: not atomic
+	 */
 	public void incVotesAgainst() {
 		int prev = getInt(VOTES_AGAINST);
 		put(VOTES_AGAINST, ++prev);
@@ -72,7 +80,9 @@ public class Voting extends BasicDBObject {
 		put(USER_COUNT, userCount);
 	}
 	
-	// returns the initiator UID
+	/** 
+	 * @return The initiator UID
+	 */
 	public String getInitiatorUid() {
 		return (String)get(INITIATOR);
 	}

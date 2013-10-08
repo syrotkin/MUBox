@@ -5,7 +5,11 @@ import java.util.TimerTask;
 
 import server.data.FileManager;
 import server.data.VotingManager;
-
+/**
+ * Schedules a {@link TimerTask} thread to close time constraint votings periodically.
+ * @author soleksiy
+ *
+ */
 public class VotingEvaluator {
 
 	private Timer timer;

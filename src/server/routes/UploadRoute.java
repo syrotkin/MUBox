@@ -25,7 +25,11 @@ import spark.Request;
 import spark.Response;
 import spark.Route;
 import spark.Session;
-
+/**
+ * An implementation of a Spark route as a separate class. Moved to this separate class because the code for this route became long.
+ * @author soleksiy
+ *
+ */
 public class UploadRoute extends Route {
 
 	private CloudFactory cloudFactory;

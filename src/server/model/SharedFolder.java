@@ -1,9 +1,12 @@
 package server.model;
 
-
 import com.mongodb.BasicDBObject;
 
-
+/**
+ * Represents a shared folder.
+ * @author soleksiy
+ *
+ */
 public class SharedFolder extends BasicDBObject {
 	/**
 	 * Generated
@@ -42,15 +45,21 @@ public class SharedFolder extends BasicDBObject {
 		put("owner", ownerUid);
 	}
 	
-	/** Related to voting */
-	
+	/** 
+	 * Related to voting. Gets the voting scheme for this shared folder. 
+	 */
 	public String getVotingScheme() {
 		return (String)get("votingScheme");
 	}
+	/** 
+	 * Related to voting. Sets the voting scheme for this shared folder. 
+	 */
 	public void setVotingScheme(String votingScheme) {
 		put("votingScheme", votingScheme);
 	}	
-	// Used with "percentage" and related voting schemes
+	/** 
+	 * Related to voting. Gets "percentage". Used with "percentage" and related voting schemes  
+	 */
 	public int getPercentageUsers() {
 		Integer i = (Integer)get("percentage");
 		if (i == null) {
@@ -58,10 +67,15 @@ public class SharedFolder extends BasicDBObject {
 		}
 		return i.intValue();
 	}
+	/** 
+	 * Related to voting. Sets "percentage". Used with "percentage" and related voting schemes  
+	 */
 	public void setPercentageUsers(int percentage) {
 		put("percentage", percentage);
 	}
-	// used with time-constrained voting
+	/** 
+	 * Related to voting. Gets "periodInMinutes". Used with time-constrained voting  
+	 */
 	public int getPeriodInMinutes() {
 		Integer i = (Integer)get("periodInMinutes");
 		if (i == null) {
@@ -69,6 +83,10 @@ public class SharedFolder extends BasicDBObject {
 		}
 		return i.intValue();
 	}
+	/**
+	 * Related to voting. Sets "periodInMinutes". Used with time-constrained voting.
+	 * @param minutes
+	 */
 	public void setPeriodInMinutes(int minutes) {
 		put("periodInMinutes", minutes);
 	}

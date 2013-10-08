@@ -2,7 +2,11 @@ package server.model;
 
 import com.mongodb.BasicDBObject;
 
-
+/**
+ * Represents a cloud storage user. Could contain fields specific to Dropbox or Google Drive.
+ * @author soleksiy
+ *
+ */
 public class User extends BasicDBObject {
 	/**
 	 * Generated serial version UID
@@ -33,42 +37,61 @@ public class User extends BasicDBObject {
 		put(DISPLAY_NAME, displayName);
 	}
 	/**
-	 Access key in Dropbox
-	 Access token in Google
-	*/
+	 * Access key in Dropbox
+	 * Access token in Google
+	 */
 	public String getAccessKey() {
 		return (String)get(ACCESS_KEY);
 	}
+	/**
+	 * Access key in Dropbox
+	 * Access token in Google
+	 */
 	public void setAccessKey(String accessKey) {
 		if (accessKey != null) {
 			put(ACCESS_KEY, accessKey);
 		}
 	}
 	
-	// Only in Dropbox
+	/** 
+	 * Only in Dropbox
+	 */
 	public String getAccessSecret() {
 		return (String)get(ACCESS_SECRET);
 	}
+	/** 
+	 * Only in Dropbox
+	 */
 	public void setAccessSecret(String accessSecret) {
 		if (accessSecret != null) {
 			put(ACCESS_SECRET, accessSecret);
 		}
 	}
 	
-	// Only in Google
+	/** 
+	 * Only in Google Drive
+	 */
 	public String getRefreshToken() {
 		return (String)get(REFRESH_TOKEN);
 	}
+	/** 
+	 * Only in Google Drive
+	 */
 	public void setRefreshToken(String refreshToken) {
 		if (refreshToken != null) {
 			put(REFRESH_TOKEN, refreshToken);
 		}
 	}
 	
-	// Only in Google
+	/** 
+	 * Only in Google Drive
+	 */
 	public String getEmail() {
 		return (String)get(EMAIL);
 	}
+	/** 
+	 * Only in Google Drive
+	 */
 	public void setEmail(String email) {
 		if (email != null) {
 			put(EMAIL, email);

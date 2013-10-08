@@ -1,11 +1,13 @@
 package server.model;
 
-
-
 import java.util.List;
 
 import com.google.api.services.drive.model.File;
-
+/**
+ * Represents a file node in a file tree. Used to resync with Google Drive.
+ * @author soleksiy
+ *
+ */
 public class FileNode {
 	private String fileId; // in case of root, fileId = "root", file = null;
 	private File file;

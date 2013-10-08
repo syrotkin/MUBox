@@ -5,7 +5,11 @@ import java.util.List;
 
 import com.mongodb.BasicDBObject;
 
-// A copy of Dropbox API Entry, with isShared added, for internal use
+/**
+ * Represents a file metadata document, used in the "filedata" collection; for dealing with file metadata locally
+ * @author soleksiy
+ *
+ */
 public class FileEntry extends BasicDBObject {
 		
 	/**

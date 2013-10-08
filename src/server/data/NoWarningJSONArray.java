@@ -1,7 +1,11 @@
 package server.data;
 
 import org.json.simple.JSONArray;
-
+/**
+ * Subclass of {@link JSONArray} that suppresses the warnings
+ * @author soleksiy
+ *
+ */
 public class NoWarningJSONArray extends JSONArray {
 
 	/**

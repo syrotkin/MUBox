@@ -6,7 +6,7 @@ import com.mongodb.DBObject;
 
 /**
  * Generates unique IDs for shared folders and voting. This class retrieved the previously stored unique ID, increments it by 1, and stores the result in the database.
- *
+ * Idea here: http://shiflett.org/blog/2010/jul/auto-increment-with-mongodb 
  */ 
 public class UniqueIDGenerator {
 	
@@ -19,7 +19,7 @@ public class UniqueIDGenerator {
 		this.dbManager = dbm;
 	}
 	
-	public long getUniqueID(String collection) {
+	public synchronized long getUniqueID(String collection) {
 		DBCollection folderseq = dbManager.getCollection(UNIQUEIDS);
 		BasicDBObject query = new BasicDBObject("_id", collection);
 		BasicDBObject update = new BasicDBObject("$inc", new BasicDBObject(UNIQUEID, 1L));

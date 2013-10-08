@@ -1,7 +1,11 @@
 package server.model;
 
 import com.mongodb.BasicDBObject;
-
+/**
+ * Describes a vote of a user on a specific voting process. Stored in the "votingusers" collection.
+ * @author soleksiy
+ *
+ */
 public class VotingUser extends BasicDBObject {
 
 	private static final String UID = "uid";

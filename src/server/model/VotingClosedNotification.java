@@ -1,7 +1,11 @@
 package server.model;
 
 import com.mongodb.BasicDBObject;
-
+/**
+ * Represents a notification that a voting process has been closed.
+ * @author soleksiy
+ *
+ */
 public class VotingClosedNotification extends BasicDBObject implements VotingItem {
 
 	private static final long serialVersionUID = -4921903633176756916L;

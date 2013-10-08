@@ -1,5 +1,9 @@
 package server;
-
+/**
+ * Stores application settings: whether Activity View, shadow files, voting are enabled or disabled. 
+ * @author soleksiy
+ *
+ */
 public class Settings {
 	public final boolean disableActivityView;
 	public final boolean disableShadow;

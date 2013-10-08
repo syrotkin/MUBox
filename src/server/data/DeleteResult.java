@@ -1,5 +1,9 @@
 package server.data;
-
+/**
+ * Encapsulates result of a deletion
+ * @author soleksiy
+ *
+ */
 public class DeleteResult {
 	private String error;
 	private String rev;

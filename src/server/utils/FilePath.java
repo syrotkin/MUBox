@@ -52,36 +52,4 @@ public class FilePath {
         return path.substring(ind + 1, path.length());
     }
 	
-	
-	/**
-	 * OLD: Given a path to a file, returns a path to its parent folder.
-	 */
-//	public static String getParentPath_old(String path) {
-//		String parentPath = null;
-//		if (path.indexOf('/') == -1) {
-//			parentPath = "";
-//		}
-//		else {
-//			int lastIndex = path.lastIndexOf('/');
-//			parentPath = path.substring(0, lastIndex);
-//		}
-//		return parentPath;
-//	}
-//	
-//	/**
-//     * Used by dropbox. Returns the path of the parent directory if this is a file.
-//     */
-//    public static String parentPath(String path) {
-//        if (path.equals("/")) {
-//            return "";
-//        } else {
-//            int ind = path.lastIndexOf('/');
-//            return path.substring(0, ind + 1);
-//        }
-//    }
-    
-	
-	
-    
-	
 }

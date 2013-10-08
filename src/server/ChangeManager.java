@@ -23,7 +23,9 @@ import server.model.Voting;
 import server.model.VotingUser;
 import server.utils.FilePath;
 
-
+/**
+ * Class for managing file operations in the database
+ */
 public class ChangeManager {
 	private SharedFolderManager sharedFolderManager;
 	private FileManager fileManager;
@@ -32,6 +34,11 @@ public class ChangeManager {
 	private DatabaseInserter dbInserter;
 	private DatabaseRemover dbRemover;
 	
+	/**
+	 * Constructs an instance of ChangeManager. 
+	 * @param shfm a {@link SharedFolderManager} instance
+	 * @param fm a {@link FileManager} instance
+	 */
 	public ChangeManager(SharedFolderManager shfm, FileManager fm) {
 		this.sharedFolderManager = shfm;
 		this.fileManager = fm;
@@ -40,6 +47,14 @@ public class ChangeManager {
 		dbRemover = new DatabaseRemover(fm);
 	}
 		
+	/**
+	 * Copies a file in the database: creates a new {@link FileEntry} at the <code>toPath</code>.
+	 * @param fromPath Old file path
+	 * @param toPath New file path
+	 * @param userUid User UID (the user whose file it is)
+	 * @param pathToRevMap Map from paths to <code>rev</code>s. <code>rev</code> is the revision identifier in Dropbox. Correct <code>rev</code> needs to be assigned to the new file.
+	 * @param pathToFileIdMap Map from paths to <code>fileId</code>. <code>fileId</code> is Google's file identifier. Correct <code>fileId</code>s need to be assigned. 
+	 */
 	public void recordCopy(String fromPath, String toPath, String userUid, Map<String, String> pathToRevMap, Map<String, String> pathToFileIdMap) {
 		//long sharedFolderIDFrom = sharedFolderManager.getSharedFolderIDForUser(userUid, fromPath); //does not matter. The from folder is not geting changed
 		//long folderSeqTo = sharedFolderManager.getSharedFolderIDForUser(userUid, toPath);
@@ -66,7 +81,7 @@ public class ChangeManager {
 			recordInDB(dbInserter, entry, sharedFolderIDTo, userUid, pathToRevMap, pathToFileIdMap);
 		}
 	}
-
+	
 	private String replaceFirstOccurrence(String oldPath, String fromPath, String toPath) {
 		return oldPath.replaceFirst("^" + Pattern.quote(fromPath), Matcher.quoteReplacement(toPath));
 	}
@@ -98,11 +113,22 @@ public class ChangeManager {
 		}
  	}
 		
-	// See comments in the _old method. They may not all make sense.
+	/**
+	 * When the owner of the shared folder renames a file, it is "renameshared". This method restores the file to the old state (probably because the collaborators rejected the rename).
+	 * @param initiatorSuggestedPath The path to the renamed file
+	 * @param initiatorPath The original file path.
+	 * @param initiatorUid UID of the vote initiator (user who renamed the file).
+	 */
 	public void restoreRenameShared(String initiatorSuggestedPath, String initiatorPath, String initiatorUid) {
 		restoreMoveShared(initiatorSuggestedPath, initiatorPath, initiatorUid);
 	}
 
+	/**
+	 * When the owner of the shared folder moves a file, it is "moveshared". This method restores the file to the old state (probably because the collaborators rejected the move).
+	 * @param initiatorSuggestedPath The path to the moved file.
+	 * @param initiatorPath The path to the original file
+	 * @param initiatorUid UID of the vote initiator (the user who moved the file).
+	 */
 	public void restoreMoveShared(String initiatorSuggestedPath, String initiatorPath, String initiatorUid) {
 		// Removal part
 		FileData entryAndDescendants = fileManager.listEntryAndDescendants(initiatorUid, initiatorSuggestedPath, false);
@@ -123,6 +149,11 @@ public class ChangeManager {
 		fileManager.restoreAncestors(initiatorUid, initiatorPath, -1L);
 	}
 	
+	/**
+	 * When the owner of the shared folder deletes a file, it is "deleteshared". This method restores the file to the old state (probably because the collaborators rejected the delete).
+	 * @param path File path
+	 * @param initiatorUid UID of the vote initiator (user who deleted the file)
+	 */
 	public void restoreDeleteShared(String path, String initiatorUid) {
 		// Undeletion part
 		FileData restorableEntryAndDescendants = fileManager.listEntryAndDescendants(initiatorUid, path, true);		
@@ -137,11 +168,21 @@ public class ChangeManager {
 		fileManager.restoreAncestors(initiatorUid, path, -1L);
 	}
 	
+	/**
+	 * Suggests deleting a file. Records a voting process for deleting the file in the voting collection and a vote in favor in the votingusers collection.
+	 * @param path Path to the file
+	 * @param initiatorUid UID of the vote initiator (the user who suggested deleting the file). 
+	 */
 	public void suggestDelete(String path, String initiatorUid) {
 		VotingInfo info = getVotingInfo(initiatorUid, path, path, "suggestdelete");
 		recordVotingUsers(info, initiatorUid, path, path, true);
 	}
 		
+	/**
+	 * Marks the file/folder as deleted. Records a voting process in the voting collection and a vote in favor in the votingusers collection.
+	 * @param path Path to the file.
+	 * @param initiatorUid UID of the vote initiator (the folder owner who deleted the file).
+	 */
 	public void deleteShared(String path, String initiatorUid) {
 		VotingInfo votingInfo = getVotingInfo(initiatorUid, path, path, "deleteshared");
 		FileData fileData = fileManager.listEntryAndDescendants(initiatorUid, path, false);
@@ -154,6 +195,12 @@ public class ChangeManager {
 		recordVotingUsers(votingInfo, initiatorUid, path, path, false);
 	}
 	
+	/**
+	 * Marks the original file/folder as deleted (moved). Creates a new file (or file hierarchy). Records a voting process in the voting collection and a vote in the votingusers collection.
+	 * @param fromPath Original file path
+	 * @param toPath Path to the moved file
+	 * @param initiatorUid UID of the vote initiator (the folder owner who moved the file).
+	 */
 	public void moveShared(String fromPath, String toPath, String initiatorUid) {
 		VotingInfo votingInfo = getVotingInfo(initiatorUid, fromPath, toPath, "moveshared");
 		Date now = new Date();
@@ -181,21 +228,39 @@ public class ChangeManager {
 		recordVotingUsers(votingInfo, initiatorUid, fromPath, toPath, false);
 	}
 
+	/**
+	 * Suggests moving a file. Records a voting process in the voting collection and a vote in favor in the votingusers collection.
+	 * @param fromPath Path to the original file.
+	 * @param toPath Path to the moved file.
+	 * @param initiatorUid UID of the vote initiator (user who suggested moving the file).
+	 */
 	public void suggestMove(String fromPath, String toPath, String initiatorUid) {
 		VotingInfo votingInfo = getVotingInfo(initiatorUid, fromPath, toPath, "suggestmove");
 		recordVotingUsers(votingInfo, initiatorUid, fromPath, toPath, true);
 	}
-		
+	
+	/**
+	 * Suggests renaming a file. Records a voting process in the voting collection, and a vote in favor in the votingusers collection.
+	 * @param fromPath Path to the original file.
+	 * @param toPath Path the the renamed file.
+	 * @param initiatorUid UID of the vote initiator (user who suggested renaming a file).
+	 */
 	public void suggestRename(String fromPath, String toPath, String initiatorUid) {
 		VotingInfo votingInfo = getVotingInfo(initiatorUid, fromPath, toPath, "suggestrename");
 		recordVotingUsers(votingInfo, initiatorUid, fromPath, toPath, true);
 	}
 	
-	// Similar to recordMove, but
-	// 1. only does rename (+ subsequent move of the descendants)
-	// 2. only for the given user -- be careful, no shared
-	// 3. inserts data into voting and votingusers
-	// 4. we still need folderseqs for that (because the path in votingusers may be different)
+	/**
+	 * Renames a shared file (by the folder owner).
+	 * Similar to recordMove, but
+	 * 1. only does rename (+ subsequent move of the descendants)
+	 * 2. only for the given user -- be careful, no shared
+	 * 3. inserts data into voting and votingusers
+	 * 4. we still need folderseqs for that (because the path in votingusers may be different)
+	 * @param fromPath Original file path
+	 * @param toPath New file path.
+	 * @param initiatorUid UID of the vote initiator (the folder owner who renamed the shared file).
+	 */
 	public void renameShared(String fromPath, String toPath, String initiatorUid) {
 		VotingInfo votingInfo = getVotingInfo(initiatorUid, fromPath, toPath, "renameshared");
 		Date now = new Date();
@@ -224,6 +289,15 @@ public class ChangeManager {
 		recordVotingUsers(votingInfo, initiatorUid, fromPath, toPath, false);
 	}
 	
+	
+	/**
+	 * Returns the data describing the voting process.
+	 * @param initiatorUid UID of the vote initiator
+	 * @param fromPath Original file path
+	 * @param toPath New file path
+	 * @param action file operation
+	 * @return Voting info -- data describing the voting process.
+	 */
 	private VotingInfo getVotingInfo(String initiatorUid, String fromPath, String toPath, String action) {
 		long sharedFolderIDFrom = sharedFolderManager.getSharedFolderIDForUser(initiatorUid, fromPath); // needed for getting correct paths to insert in votingusers
 		long sharedFolderIDTo = sharedFolderManager.getSharedFolderIDForUser(initiatorUid, toPath);
@@ -239,6 +313,11 @@ public class ChangeManager {
 		return votingInfo;
 	}
 
+	/**
+	 * Gets the voting scheme for the given shared folders
+	 * @param sharedFolders list of shared folders
+	 * @return voting scheme
+	 */
 	private VotingScheme getVotingScheme(List<SharedFolder> sharedFolders) {
 		SharedFolder sharedFolder1 = sharedFolders.size() == 0 ? null : sharedFolders.get(0);
 		String votingSchemeName = null;
@@ -261,8 +340,12 @@ public class ChangeManager {
 	}
 
 	/**
-	 * withCheck means that we will check if a vote with a given user uid and given path already exists. 
-	 * If so, it will delete voting document corresponding to this new vote AND will not insert new votingusers 
+	 * Records information about the vote in the votingusers collection.
+	 * @param votingInfo voting process information
+	 * @param initiatorUid UID of the user who initiated the voting process
+	 * @param fromPath Original file path
+	 * @param toPath New file path
+	 * @param withCheck means that we will check if a vote with a given user uid and given path already exists. If so, it will delete voting document corresponding to this new vote AND will not insert new votingusers
 	 */
 	private void recordVotingUsers(VotingInfo votingInfo, String initiatorUid, String fromPath, String toPath, boolean withCheck) {	
 		long votingID = votingInfo.getVotingID();
@@ -348,12 +431,18 @@ public class ChangeManager {
 		return votingID;
 	}
 	
-	// fromPath is the topmost ancestor's "from path"
-	// toPath is the topmost ancestor's "to path"
+	/**
+	 * Records a move operation. Marks the original file/folder as deleted (moved), creates a new file (or file hierarchy).
+	 * @param fromPath topmost ancestor's "from path"
+	 * @param toPath topmost ancestor's "to path"
+	 * @param userUid The owner of this file
+	 * @param moveAction Could be MOVE, RENAME, RESTORE. MoveAction.MOVE -- regular move, MoveAction.RENAME -- rename, MoveAction.RESTORE -- unmove, unrename (also see separate recordUndelete method)
+	 * @param pathToRevMap 
+	 * @param initiatorUid used when we want to record the user different from the current user, e.g. in case of "rename shared" + accept --> we record the initiator as the "deleter" and "creator"
+	 * @param includeDeleted True if you want to include deleted files when listing the folder.
+	 */
 	// oldPath is a the "old path" per file entry (different for each file entry)
 	// newPath is the "new path" per file entry (different for each file entry)
-	// MoveAction.MOVE --> regular move, MoveAction.RENAME --> rename, MoveAction.RESTORE --> unmove, unrename (also see separate recordUndelete method)
-	// initiatorUid is used when we want to record the user different from the current user, e.g. in case of "rename shared" + accept --> we record the initiator as the "deleter" and "creator"
 	public void recordMove(String fromPath, String toPath, String userUid, MoveAction moveAction, Map<String, String> pathToRevMap, String initiatorUid, boolean includeDeleted) {
 			long sharedFolderIDFrom = sharedFolderManager.getSharedFolderIDForUser(userUid, fromPath);
 			//long folderSeqTo = sharedFolderManager.getSharedFolderIDForUser(userUid, toPath);
@@ -414,7 +503,8 @@ public class ChangeManager {
 	
 	/**
 	 * Removes the fields that are irrelevant for a newly created FileEntry. 
-	*/
+	 * @param entry FileEntry for which to remove fields.
+	 */
 	private void removeOldFields(FileEntry entry) {
 		entry.removeField("_id");
 		entry.removeField("lastSeen");
@@ -425,6 +515,13 @@ public class ChangeManager {
 		entry.removeField("newFileName");
 	}
 
+	/**
+	 * Marks a file/folder as deleted.
+	 * @param path Path to the file
+	 * @param userUid UID of the owner of the file.
+	 * @param initiatorUid Used when we want to record a user different from the owner, e.g. in case of deleteShared + accept -- we record the file "deleter".
+	 * @param includeDeleted True if you want to include deleted files when listing folder contents.
+	 */
 	public void recordDelete(String path, String userUid, String initiatorUid, boolean includeDeleted) {
 		System.out.println("in recordDelete, path is: "  + path + ", user is: " + userUid +", initiator: " + initiatorUid);
 		long sharedFolderID = sharedFolderManager.getSharedFolderIDForUser(userUid, path);
@@ -440,6 +537,11 @@ public class ChangeManager {
 		}
 	}
 	
+	/**
+	 * Marks the file/file hierarchy as not deleted.
+	 * @param path path to the file
+	 * @param userUid UID of the file owner
+	 */
 	public void recordUndelete(String path, String userUid) {
 		//long folderSeq = sharedFolderManager.getSharedFolderIDForUser(userUid, path);
 		SharedFolder sharedFolder = sharedFolderManager.getSharedFolderForUser(userUid, path);
@@ -463,6 +565,14 @@ public class ChangeManager {
 		}
 	}
 	
+	/**
+	 * Records a newly uploaded file in the database
+	 * @param parentPath Path to the folder where the file is uploaded to.
+	 * @param fileName Filename
+	 * @param rev Dropbox-specific revision identifier
+	 * @param fileId file ID, Google-specific file identifier
+	 * @param userUid UID of the file owner
+	 */
 	public void recordUpload(String parentPath, String fileName, String rev, String fileId, String userUid) {
 		System.out.println("in recordUpload");
 		System.out.println("\tparentPath: " + parentPath);
@@ -481,6 +591,13 @@ public class ChangeManager {
 		recordInDB(dbInserter, entry, sharedFolderID, userUid, dummyMap, dummyMap);
 	}
 	
+	/**
+	 * Records a new folder in the database.
+	 * @param path path to the folder
+	 * @param rev Dropbox-specific revision identifier
+	 * @param fileId File ID, Google-specific file identifier
+	 * @param userUid UID of the file owner.
+	 */
 	public void recordNewFolder(String path, String rev, String fileId, String userUid) {
 		System.out.println("in recordFileDataNewFolder");
 		//long folderSeq = sharedFolderManager.getSharedFolderIDForUser(userUid, path);
@@ -512,7 +629,7 @@ public class ChangeManager {
 	}
 	
 	// initiatorUid is passed when the currently logged in user is not the one who initiated the change (in the context of shared folders and voting) 
-	void setCreationInfo(FileEntry entry, String newPath, Date date, String userUid, String creationAction) {
+	private void setCreationInfo(FileEntry entry, String newPath, Date date, String userUid, String creationAction) {
 		entry.setPath(newPath);
 		entry.setFilename(FilePath.getFileName(newPath));
 		entry.setDeleted(false);
@@ -531,7 +648,7 @@ public class ChangeManager {
 		// TODO: decide whether to set deletionUserName or not
 	}
 	
-	void recordInDB(DatabaseExecutor dbExecutor, FileEntry entry, long sharedFolderID, String userUid, Map<String, String> pathToRevMap, Map<String, String> pathToFileIdMap) {
+	private void recordInDB(DatabaseExecutor dbExecutor, FileEntry entry, long sharedFolderID, String userUid, Map<String, String> pathToRevMap, Map<String, String> pathToFileIdMap) {
 		entry.removeID(); // in case the entry was created using another entry as a template, we don't want to update the original entry, but want to create a new one
 		String rev = pathToRevMap.get(entry.getPath());
 		entry.setRev(rev); // setRev takes care of nulls
@@ -606,17 +723,35 @@ public class ChangeManager {
 	
 } // end class
 
-
+/**
+ * Abstract class for executing insert, update, delete operations
+ * @author soleksiy
+ *
+ */
 abstract class DatabaseExecutor {
 	protected FileManager fileManager;
 	
+	/**
+	 * Constructs an instance of a DatabaseExecutor
+	 * @param fm Reference to {@link FileManager}
+	 */
 	public DatabaseExecutor(FileManager fm) {
 		this.fileManager = fm;
 	}
 	
+	/**
+	 * Execute a database operation
+	 * @param entry FileEntry
+	 * @param userUid UID of the owner
+	 */
 	public abstract void execute(FileEntry entry, String userUid);
 }
 
+/**
+ * Subclass of DatabaseExecutor, executes update operations
+ * @author soleksiy
+ *
+ */
 class DatabaseUpdater extends DatabaseExecutor {
 	public DatabaseUpdater(FileManager fm) {
 		super(fm);
@@ -626,6 +761,11 @@ class DatabaseUpdater extends DatabaseExecutor {
 	}
 }
 
+/**
+ * Subclass of DatabaseExecutor. Executes insert operations
+ * @author soleksiy
+ *
+ */
 class DatabaseInserter extends DatabaseExecutor {
 	public DatabaseInserter(FileManager fm) {
 		super(fm);
@@ -635,6 +775,11 @@ class DatabaseInserter extends DatabaseExecutor {
 	}
 }
 
+/**
+ * Subclass of DatabaseExecutor. Executes remove (delete) operations
+ * @author soleksiy
+ *
+ */
 class DatabaseRemover extends DatabaseExecutor {
 	public DatabaseRemover(FileManager fm) {
 		super(fm);

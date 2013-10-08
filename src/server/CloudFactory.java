@@ -5,6 +5,11 @@ import server.model.User;
 import spark.Request;
 import spark.Session;
 
+/**
+ * Cloud factory. Creates instances of {@link CloudStorage}.
+ * @author soleksiy
+ *
+ */
 public class CloudFactory {
 	
 	private UserManager userManager;
@@ -36,16 +41,30 @@ public class CloudFactory {
 		return cloudStorage;
 	}
 
+	/**
+	 * Gets the cloud storage implementation stored in the server session.
+	 * @param session Server session
+	 * @return Specific cloud storage provider
+	 */
 	public CloudStorage getCloudStorage(Session session) {
 		setServerSession(session);
 		String provider = getFromSession(Constants.PROVIDER_SESSION_KEY);
 		return getCloudStorage(provider);
 	}
 
+	/**
+	 * Sets server session
+	 * @param session Server session
+	 */
 	public void setServerSession(Session session) {
 		this.session = session;
 	}
 
+	/**
+	 * Gets cloud storage implementation by user UID.
+	 * @param uid User UID
+	 * @return Cloud storage implementation
+	 */
 	public CloudStorage getCloudStorageByUserUid(String uid) {
 		User user = userManager.getUser(uid);
 		String provider = user.getProvider();
@@ -54,6 +73,11 @@ public class CloudFactory {
 		return cloudStorage;
 	}
 	
+	/**
+	 * Gets cloud storage from the server request.
+	 * @param request Server request
+	 * @return Cloud storage implementation
+	 */
 	public CloudStorage getCloudStorage(Request request) {
 		setServerSession(request.session());
 		String provider = getFromSession(Constants.PROVIDER_SESSION_KEY);

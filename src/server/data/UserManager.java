@@ -13,7 +13,11 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
-
+/**
+ * Class for managing users, works with the users collection.
+ * @author soleksiy
+ *
+ */
 public class UserManager {
 	DatabaseManager dbManager;
 	
@@ -27,7 +31,12 @@ public class UserManager {
 	public UserManager(DatabaseManager dbm) {
 		this.dbManager = dbm;
 	}
-	
+	/**
+	 * Get display name for users
+	 * @param uid User UID
+	 * @param users Map from user UIDs to display names.
+	 * @return User's display name.
+	 */
 	public String getDisplayName(String uid, Map<String, String> users) {
 		String userName = users.get(uid);
 		if (userName == null) {
@@ -37,7 +46,7 @@ public class UserManager {
 		return userName;
 	}
 	
-	public String getDisplayName(String uid) {
+	private String getDisplayName(String uid) {
 		DBCollection users = dbManager.getCollection(USERS);
 		BasicDBObject query = new BasicDBObject(UID, uid);
 		String displayName = null;
@@ -50,7 +59,10 @@ public class UserManager {
 		}
 		return displayName;
 	}
-	
+	/**
+	 * Lists cloud storage providers based on what providers are available in the users collection.
+	 * @return JSON array of providers
+	 */
 	public JSONArray listProviders() {
 		NoWarningJSONArray result = new NoWarningJSONArray();
 		DBCollection users = dbManager.getCollection(USERS);
@@ -62,7 +74,11 @@ public class UserManager {
 		}
 		return result;
 	}
-	
+	/**
+	 * Lists users for a specific cloud storage provider
+	 * @param provider Cloud storage provider (e.g. "dropbox", "google"
+	 * @return array of providers
+	 */
 	public JSONArray listUsers(String provider) { // for now: [{uid: <uid>, display_name: <display_name>}, ...]
 		NoWarningJSONArray list = new NoWarningJSONArray();		
 		DBCollection users = dbManager.getCollection(USERS);
@@ -91,7 +107,7 @@ public class UserManager {
 		return list;
 	}
 	
-	public List<User> listUsers(BasicDBList userUidList, String ownerUid, boolean excludeOwner) {
+	private List<User> listUsers(BasicDBList userUidList, String ownerUid, boolean excludeOwner) {
 		List<User> results = new ArrayList<User>();
 		BasicDBObject uidCriteria = new BasicDBObject("$in", userUidList); 
 		if (excludeOwner) {
@@ -116,7 +132,13 @@ public class UserManager {
 		}
 		return results;
 	}
-	
+	/**
+	 * Retrieves User objects based on the list of user UIDs.
+	 * @param userUidInputList List of user UIDs.
+	 * @param ownerUid The UID of the folder owner.
+	 * @param excludeOwner True if the returned list should exclude the owner.
+	 * @return List of users.
+	 */
 	public List<User> listUsers(List<String> userUidInputList, String ownerUid, boolean excludeOwner) {
 		BasicDBList userUids = new BasicDBList();
 		for (String userUid : userUidInputList) {
@@ -124,14 +146,21 @@ public class UserManager {
 		}
 		return listUsers(userUids, ownerUid, excludeOwner);
 	}
-	
+	/**
+	 * Retrieves the user from the database based on the user UID.
+	 * @param uid User UID
+	 * @return User
+	 */
 	public User getUser(String uid) {
 		DBCollection userCollection = dbManager.getCollection(USERS, User.class);
 		BasicDBObject query = new BasicDBObject(UID, uid);
 		User user = (User)userCollection.findOne(query);
 		return user;
 	}
-	
+	/**
+	 * Saves a user in the database.
+	 * @param user User to save
+	 */
 	public void saveUser(User user) {
 		DBCollection userCollection = dbManager.getCollection(USERS, User.class);
 		BasicDBObject query = new BasicDBObject(UID, user.getUid());

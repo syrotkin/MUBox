@@ -1,12 +1,17 @@
 package server.model;
 
 import com.mongodb.BasicDBObject;
-
+/**
+ * Represents a voting process, normally stored in the "voting" collection.
+ * @author soleksiy
+ *
+ */
 public class OpenVote extends BasicDBObject {
 	private static final long serialVersionUID = 7467628976553226943L;
 	//public Voting voting;
 	//public VotingUser votingUser;
 	/*
+	 * This is what we store:
 		long votingID;
 		// String initiator -- but then we would need the username...
 		String action;
@@ -18,6 +23,7 @@ public class OpenVote extends BasicDBObject {
 		String path
 		String newPath (store it, but then decide if relevant)
 	*/
+	
 	public long getVotingID() {
 		return (long)get("votingID");
 	}

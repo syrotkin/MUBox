@@ -41,6 +41,11 @@ import com.dropbox.client2.exception.DropboxException;
 import com.dropbox.client2.session.AccessTokenPair;
 import com.dropbox.client2.session.WebAuthSession;
 
+/**
+ * Implementation of CloudStorage for Dropbox. Provides Dropbox-specific file management operations.
+ * @author soleksiy
+ *
+ */
 public class Dropbox implements CloudStorage {	
 	
 	private DropboxAuthorizationManager authorizationManager;
@@ -406,7 +411,7 @@ public class Dropbox implements CloudStorage {
 	}
 	
 	// Directories are not supported
-	/* (non-Javadoc)
+	/* (non-Javadoc) Directories are not supported
 	 * @see server.CloudStorage#revisions(java.lang.String)
 	 */
 	@Override
@@ -633,27 +638,6 @@ public class Dropbox implements CloudStorage {
 	private boolean configureAccessTokens() {
 		return authorizationManager.configureAccessTokens(this.userManager, this.uid);	
 	}
-	
-	/*
-	private User impersonateUser(String userUid) {
-		User originalUser =  getUserFromSession();
-		//System.out.println("original. Key: " + originalUser.getAccessKey() + ", secret: " + originalUser.getAccessSecret());
-		User impersonator = userManager.getUser(userUid);
-		storeInSession(impersonator);
-		// this may not be required because we always get the user from server session before calling dropbox API
-		authorizationManager.setCurrentUserInAuthSession(impersonator);
-		//System.out.println("impersonator Tokens. key: " + impersonator.getAccessKey()  + ", secret: " + impersonator.getAccessSecret());
-		return originalUser;
-	}
-	private void restoreOriginalUser(User originalUser) {
-		if (originalUser != null) {
-			storeInSession(originalUser);
-			// this may not be required. Only storing in the server session may be required.
-			//getWebAuthSession().setAccessTokenPair(new AccessTokenPair(originalUser.getAccessKey(), originalUser.getAccessSecret()));
-			authorizationManager.setCurrentUserInAuthSession(originalUser);
-		}
-	}
-	*/
 		
 	private User getUserFromSession() {
 		if (this.session != null) {
@@ -672,7 +656,9 @@ public class Dropbox implements CloudStorage {
 		}
 	}
 		
-	// NOTE: Assumes that by the time it is called, the session is not null
+	/**
+	 * NOTE: Assumes that by the time it is called, the session is not null
+	 */
 	public JSONObject tryListFiles(String uid, String serverName, int port, String path, FileManager fileManager) {
 		if (uid != null) {
 			System.out.println("UID is not null, provider is dropbox");

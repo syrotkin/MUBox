@@ -32,10 +32,18 @@ public class Breadcrumb {
 		this.active = active;
 	}
 	
+	/**
+	 * Returns a JSON-string representation of this breadcrumb.
+	 * 
+	 * @return a JSON-string representation of this breadcrumb.
+	 */
 	public String toString() {
 		return this.toJSON().toJSONString();
 	}
 	
+	/**
+	 * Creates a {@link JSONObject} with 3 fields: <code>href</code>, <code>name</code>, <code>active</code>. 
+	 */
 	public JSONObject toJSON() {
 		NoWarningJSONObject result = new NoWarningJSONObject();
 		result.put("href", this.href);
@@ -44,8 +52,11 @@ public class Breadcrumb {
 		return result;
 	}
 
-	// Transforms the full path to a folder into an array of breadcrumb objects to be used with Bootstrap
-	// assumes that fullPath starts with '/', e.g. "/a/b/c" or "/"
+	/** Transforms the full path to a folder into an array of breadcrumb objects to be used with Bootstrap
+	 *  assumes that fullPath starts with '/', e.g. "/a/b/c" or "/"
+	 *  @param fullPath Full path
+	 *  @return An array of Breadcrumb.
+	 */
 	public static Breadcrumb[] getBreadcrumbs(String fullPath) {
 		String sep = "/";
 		String[] parts = fullPath.split(sep);
@@ -79,7 +90,7 @@ public class Breadcrumb {
 		return results;
 	}
 	
-	public static JSONArray getJSONArray(Breadcrumb[] input) {
+	private static JSONArray getJSONArray(Breadcrumb[] input) {
 		NoWarningJSONArray array = new NoWarningJSONArray();
 		for (int i = 0; i < input.length; i++) {
 			array.add(input[i]);
@@ -87,6 +98,11 @@ public class Breadcrumb {
 		return array;
 	}
 	
+	/**
+	 * Gets JSON array of breadcrumbs for a given path. 
+	 * @param fullPath full path
+	 * @return JSON array
+	 */
 	public static JSONArray getBreadcrumbsAsJSON(String fullPath) {
 		return getJSONArray(getBreadcrumbs(fullPath));
 	}

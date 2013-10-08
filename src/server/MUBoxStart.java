@@ -40,6 +40,11 @@ import server.model.VotingInput;
 import server.utils.FilePath;
 import spark.*;
 
+/**
+ * Main class that starts the server. 
+ * @author soleksiy
+ *
+ */
 public class MUBoxStart {
 	
 	private static final String DISABLE_ACTIVITY_VIEW = "disableActivityView";
@@ -70,7 +75,6 @@ public class MUBoxStart {
 		boolean disableVoting;
 		try {
 			prop.load(new FileInputStream("config.properties"));
-			//System.out.println(prop.entrySet() .getProperty("name"));
 			disableActivityView = Boolean.parseBoolean(prop.getProperty(DISABLE_ACTIVITY_VIEW, "false"));
 			disableShadow = Boolean.parseBoolean(prop.getProperty(DISABLE_SHADOW, "false"));
 			disableVoting = Boolean.parseBoolean(prop.getProperty(DISABLE_VOTING, "false"));
@@ -87,11 +91,12 @@ public class MUBoxStart {
 		}
 		return new Settings(disableActivityView, disableShadow, disableVoting);
 	}
-	
+	/**
+	 * Entry point of the application. Starts the Spark server, sets the port, establishes the server routes that react to the user input.
+	 * @param args Arguments. Accepts port number --port <number>. By default, port is 9090.
+	 */
 	public static void main(String[] args) {
 		final Settings settings = readProperties();
-		//System.out.println("act: " + settings.disableActivityView + ", shadow: " + settings.disableShadow + ", voting: " + settings.disableVoting);
-		
 		final DatabaseManager dbManager = DatabaseManager.getInstance();
 		final UserManager userManager = new UserManager(dbManager);
 		final SharedFolderManager sharedFolderManager = new SharedFolderManager(dbManager);
@@ -110,9 +115,7 @@ public class MUBoxStart {
 		//String currentDirectory = System.getProperty("user.dir");
 		//System.out.println("current dir: " + currentDirectory);
 		// by default, current directory is: C:\dev\test\SparkTest
-		
-		setUpDummyRoutes(userManager); // for testing/debugging
-		
+			
 		setUpActivityRoutes(dbManager, userManager);
 		
 		setUpRevisiontRoutes(cloudFactory, fileManager);
@@ -782,81 +785,6 @@ public class MUBoxStart {
 		Spark.post(new server.routes.UploadRoute("/upload", changeManager, fileManager, cloudFactory));
 	}
 
-	private static void setUpDummyRoutes(final UserManager userManager) {
-		Spark.get(new Route("/hello") {
-			@Override
-			public Object handle(Request request, Response response) {
-				Session session = request.session(true);
-				String uid = request.queryParams("uid");
-				if (uid != null) { // uid is in the query string
-					User currentUser = session.attribute(Constants.USER_SESSION_KEY);
-					String currentUserUid = currentUser.getUid(); //(String)session.attribute(Constants.USER_UID_SESSION_KEY);
-					if (currentUserUid != null) { // uid is in the session. Session takes precedence over query string?? Must log out?
-						String displayName = userManager.getDisplayName(uid);
-						if (displayName == null) {
-							return "User " + currentUserUid + " with NO name (must get from Dropbox) is in query string and in session.";
-						}
-						else {
-							return "User " + currentUserUid + " with name " + displayName + " is in query string and DB.";
-						}
-					}
-					else { // uid is not in the session
-						String displayName = userManager.getDisplayName(uid);
-						if (displayName == null) {
-							displayName = getNameFromDropbox();
-						}
-						session.attribute(Constants.USER_SESSION_KEY, currentUser);
-						session.attribute(Constants.DISPLAY_NAME_SESSION_KEY, displayName);
-						return "User " + uid + " name in DB is " + displayName +". Stored " + uid + ", "+ displayName + " in the session.";
-					}
-				}
-				else { // uid is NOT in the query string
-					User currentUser = session.attribute(Constants.USER_SESSION_KEY);
-					String currentUserUid = currentUser.getUid(); //(String)session.attribute(Constants.USER_UID_SESSION_KEY);
-					String displayName = (String)session.attribute(Constants.DISPLAY_NAME_SESSION_KEY);
-					if (currentUserUid != null) { // uid is in the session
-						return "User is " + currentUserUid + ", Name: " + displayName + " in the session, but null in the query string";
-					}
-					else { // uid is not in the session
-						return "User null both in the query string and in the session. Get from Dropbox, save in DB, Session.";
-					}
-				}
-			}
-			private String getNameFromDropbox() {
-				return "Foo";
-			}
-		});
-		// for testing if we can redirect from an HTML page
-		Spark.get(new Route("/hello/testpage.html") {
-			@Override
-			public Object handle(Request request, Response response) {
-				// can handle like this --> if there is no get parameter --> just return the page statically.
-				// if there is a get parameter, redirect to /home /dropboxhtml?uid=uid.
-				response.redirect("http://www.bing.com");
-				return null;
-			}
-		});
-		Spark.get(new Route("/testlistusers") {
-			@Override
-			public Object handle(Request request, Response response) {
-				JSONArray array = userManager.listUsers(null);
-				StringBuffer buffer = new StringBuffer();
-				for (Object o : array) {
-					buffer.append(o).append("\n\n");
-				}
-				return buffer;
-			}
-		});
-		Spark.get(new Route("/testdate") {
-			@Override
-			public Object handle(Request request, Response response) {
-				Date date = new Date();
-				NoWarningJSONObject result = new NoWarningJSONObject();
-				result.put("date", date.getTime());
-				return result;
-			}
-		});
-	}
 
 	protected static User getUserFromSession(Session session) {
 		return (User)session.attribute(Constants.USER_SESSION_KEY);

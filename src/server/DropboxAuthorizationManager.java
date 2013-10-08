@@ -17,41 +17,33 @@ import server.data.UserManager;
 import server.model.User;
 import spark.Session;
 
+/**
+ * Class that manages authorization for Dropbox
+ * @author soleksiy
+ *
+ */
 public class DropboxAuthorizationManager {
-
-	/*// OleksiyApp1
-		private final String APP_KEY = "hy3urd1tc5ixq4r";
-		private final String APP_SECRET = "tezbj3s7l7l1f0w";
-		private static final AccessType ACCESS_TYPE = AccessType.APP_FOLDER;
-	*/
+	
 	// OleksiyApp2
 	private final String APP_KEY = "aat3ba7bvoenafk";
 	private final String APP_SECRET = "wsonxwq5hp66eue"; 
 	private static final AccessType ACCESS_TYPE = AccessType.DROPBOX;
 	private static final String CALLBACK_SUFFIX = "/muboxindex.html";
 	private Session session;
-	
+	/**
+	 * Sets web server session	
+	 * @param session Web server (Spark) session.
+	 */
 	public void setServerSession(Session session) {
 		this.session = session;
 	}
-
-	/*
-	private AccessTokenPair getAccessTokenPairFromServerSession() {
-		String key =  getFromSession(Constants.ACCESS_KEY_SESSION_KEY);
-		String secret = getFromSession(Constants.ACCESS_SECRET_SESSION_KEY);
-		if (key == null || secret == null) {
-			User user = getFromSession(Constants.USER_SESSION_KEY);
-			if (user != null) {
-				return new AccessTokenPair(user.getAccessKey(), user.getAccessSecret());
-			}
-			else {
-				
-			}
-		}
-		return new AccessTokenPair(key, secret);
-	}
-	*/
-	
+	/**
+	 * Gets the user from server session. If the user is not there: if the user UID is known, get the user from the database; if the user UID is not known, get the user UID from the Dropbox {@link WebAuthInfo}.
+	 * From the user's access key and access secret form an access token pair and set it in the current Dropbox WebSession.
+	 * @param userManager
+	 * @param uid
+	 * @return True if success, false otherwise.
+	 */
 	public boolean configureAccessTokens(UserManager userManager, String uid) {
 		User user = getFromSession(Constants.USER_SESSION_KEY);
 		if (user == null) {	
@@ -111,7 +103,14 @@ public class DropboxAuthorizationManager {
 	private void storeInSession(User user) {
 		storeInSession(Constants.USER_SESSION_KEY, user);
 	}
-
+	
+	/**
+	 * Gets the response that contains a Dropbox redirect URL and an empty file list (If the file list is not empty, the client simply displays the list. If the file list is empty, the client navigates to the 
+	 * authorization URL) 
+	 * @param serverName
+	 * @param port
+	 * @return JSON object with the fields url and fileList.
+	 */
 	public JSONObject getAuthenticationResponse(String serverName, int port) {
 		String oAuthURL = getOAuthURL(serverName, port);
 		NoWarningJSONObject result = new NoWarningJSONObject();
@@ -148,17 +147,26 @@ public class DropboxAuthorizationManager {
 		System.out.println(webAuthInfo.url);
 		return webAuthInfo.url;
 	}
-
+	/**
+	 * Forms an access token pair from the user's access key and access secret, sets the token pair as a property of the current Dropbox WebSession.
+	 * @param user
+	 */
 	public void setCurrentUserInAuthSession(User user) {
 		getWebAuthSession().setAccessTokenPair(new AccessTokenPair(user.getAccessKey(), user.getAccessSecret()));
 	}
-	
+	/**
+	 * Creates a new <code>WebAuthSession</code>
+	 * @return New <code>WebAuthSession</code>
+	 */
 	public  WebAuthSession initWebAuthSession() {
 		AppKeyPair appKeyPair = new AppKeyPair(APP_KEY, APP_SECRET);
 		WebAuthSession authSession = new WebAuthSession(appKeyPair, ACCESS_TYPE);
 		return authSession;
 	}
-
+	/**
+	 * Tries to fetch a Dropbox WebAuthSession from the server session. If it is not there, initiates a WebAuthSession and stores it in the server session.
+	 * @return The retrieved WebAuthSession
+	 */
 	public WebAuthSession getWebAuthSession() {
 		WebAuthSession webAuthSession = getFromSession(Constants.WEB_AUTH_SESSION_SESSION_KEY);
 		if (webAuthSession == null) {

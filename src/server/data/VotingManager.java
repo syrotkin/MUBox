@@ -22,12 +22,17 @@ import server.model.VotingInput;
 import server.model.VotingUser;
 import server.model.VotingRequest;
 import server.model.VotingClosedNotification;
-
+/**
+ * Class for managing voting processes ("voting" database collection) and user votes ("votingusers" database collection).
+ * @author soleksiy
+ *
+ */
 public class VotingManager {
 
 	private DatabaseManager dbManager;
 	private UserManager userManager;
-	
+	private static final String VOTING = "voting";
+	private static final String VOTING_USERS = "votingusers";
 	
 	public VotingManager(DatabaseManager dbm, UserManager um) {
 		this.dbManager = dbm;
@@ -69,10 +74,16 @@ public class VotingManager {
 	}
 	
 	// list open votes where user is the participant
+	/**
+	 * 
+	 * Lists the voting processes where the given user is a participant
+	 * @param userUid User UID
+	 * @return BSON list of open voting process IDs.
+	 */
 	public BasicDBList listOpenVotes(String userUid) {
 		BasicDBList openVotes = new BasicDBList();
-		DBCollection votingCollection = dbManager.getCollection("voting", Voting.class);
-		DBCollection votingUsersCollection = dbManager.getCollection("votingusers", VotingUser.class);
+		DBCollection votingCollection = dbManager.getCollection(VOTING, Voting.class);
+		DBCollection votingUsersCollection = dbManager.getCollection(VOTING_USERS, VotingUser.class);
 		// Get all votingUser documents with the given uid
 		BasicDBObject query = new BasicDBObject("uid", userUid);
 		BasicDBList votingIDList = new BasicDBList();
@@ -88,7 +99,7 @@ public class VotingManager {
 		//query = new BasicDBObject("_id", new BasicDBObject("$in", votingIDList)).append("isAccepted", new BasicDBObject("$exists", false));
 		// getting all, regardless whether closed or not
 		query = new BasicDBObject("_id", new BasicDBObject("$in", votingIDList)); //.append("isAccepted", new BasicDBObject("$exists", false));
-		BasicDBList initiatorUidList = new BasicDBList();
+		List<String> initiatorUidList = new ArrayList<String>();
 		try (DBCursor dbCursor = votingCollection.find(query)) {
 			while (dbCursor.hasNext()) {
 				Voting voting = (Voting)dbCursor.next();
@@ -118,11 +129,15 @@ public class VotingManager {
 		}
 		return null;
 	}
-
+	/**
+	 * Lists the votes where a given user has not voted yet
+	 * @param userUid User UID
+	 * @return BSON list of votes where the user has not voted yet.
+	 */
 	public BasicDBList listVotingRequests(String userUid) {
 		BasicDBList result = new BasicDBList();
-		DBCollection votingCollection = dbManager.getCollection("voting", Voting.class);
-		DBCollection votingUsersCollection = dbManager.getCollection("votingusers", VotingUser.class);
+		DBCollection votingCollection = dbManager.getCollection(VOTING, Voting.class);
+		DBCollection votingUsersCollection = dbManager.getCollection(VOTING_USERS, VotingUser.class);
 		BasicDBObject query = new BasicDBObject("uid", userUid).append("voted", false);
 		BasicDBList votingIDs = new BasicDBList();
 		try (DBCursor dbCursor = votingUsersCollection.find(query)) {
@@ -153,14 +168,19 @@ public class VotingManager {
 		addVotingInfoToVotingRequestList(result, votingIDToVotingMap, uidToUserMap);
 		return result;
 	}
-	
+	/**
+	 * List notifications of closed voting processes.
+	 * @param initiatorUid Vote initiator UID
+	 * @param changeManager 
+	 * @param dropbox
+	 * @return BSON list of closed voting processes.
+	 */
 	public BasicDBList listVotingClosedNotifications(String initiatorUid, ChangeManager changeManager, CloudStorage dropbox) {
 		// input: initiatorUid
 		// output: votingID, action,h, isAccepted;   path, newPat;   message
-				
 		BasicDBList result = new BasicDBList();
-		DBCollection votingCollection = dbManager.getCollection("voting", Voting.class);
-		DBCollection votingUsersCollection = dbManager.getCollection("votingusers", VotingUser.class);
+		DBCollection votingCollection = dbManager.getCollection(VOTING, Voting.class);
+		DBCollection votingUsersCollection = dbManager.getCollection(VOTING_USERS, VotingUser.class);
 		BasicDBObject query = new BasicDBObject("initiator", initiatorUid).append("isAccepted", new BasicDBObject("$ne", null));
 		// There could be multiple such votings, with different votingIDs.
 		Map<Long, VotingClosedNotification> votingIDToNotificationMap = new HashMap<Long, VotingClosedNotification>();
@@ -196,10 +216,15 @@ public class VotingManager {
 		return result;
 	}
 
-	// This will close the votings, so that "listVotingClosedNotifications could pick up the closed votings.
+	/**
+	 * This will close time-constrained voting processes, so that the method <code>listVotingClosedNotifications</code> could pick up the closed votings.
+	 * @param changeManager
+	 * @param cloudFactory
+	 * @param fileManager
+	 */
 	public void closeTimeConstraintVotings(ChangeManager changeManager, CloudFactory cloudFactory, FileManager fileManager) {
-		DBCollection votingCollection = dbManager.getCollection("voting", Voting.class);
-		DBCollection votingUsersCollection = dbManager.getCollection("votingusers", VotingUser.class);
+		DBCollection votingCollection = dbManager.getCollection(VOTING, Voting.class);
+		DBCollection votingUsersCollection = dbManager.getCollection(VOTING_USERS, VotingUser.class);
 		BasicDBObject query = new BasicDBObject("periodInMinutes", new BasicDBObject("$exists", true)
 								.append("$ne", -1))
 								.append("isAccepted", new BasicDBObject("$exists", false));
@@ -365,7 +390,7 @@ public class VotingManager {
 		long votingID = votingInput.getVotingID(); 
 		// VotingUser: update => set voted;; get path, newPath (in case we need to accept and perform action (e.g. rename))
 		BasicDBObject query = new BasicDBObject("uid", uid).append("votingID", votingID);
-		DBCollection votingUsersCollection = dbManager.getCollection("votingusers", VotingUser.class);
+		DBCollection votingUsersCollection = dbManager.getCollection(VOTING_USERS, VotingUser.class);
 		VotingUser votingUser = (VotingUser)votingUsersCollection.findOne(query);
 		if (votingUser == null) {
 			return false; // either a bug or the vote has been cancelled.
@@ -379,7 +404,7 @@ public class VotingManager {
 		long votingID = votingInput.getVotingID();
 		boolean accepted = votingInput.getAccepted();
 		// Voting: get action and update, depending on accepted, either increment votesFor or votesAgainst
-		DBCollection votingCollection = dbManager.getCollection("voting", Voting.class);
+		DBCollection votingCollection = dbManager.getCollection(VOTING, Voting.class);
 		BasicDBObject query = new BasicDBObject("_id", votingID);
 		Voting voting = (Voting)votingCollection.findOne(query);
 		if (accepted) {
@@ -391,14 +416,21 @@ public class VotingManager {
 		votingCollection.save(voting);
 		return voting;
 	}
-	
+	/**
+	 * Gets VotingInput. Evaluates whether the voting process is cancelled or can be closed. If it is cancelled, reverts the change. If it can be closed, accepts or rejects it based on the voting scheme.
+	 * @param votingInput Information about the voting process
+	 * @param dropbox
+	 * @param changeManager
+	 * @param fileManager
+	 * @return True if success, false if error.
+	 */
 	public boolean vote(VotingInput votingInput, CloudStorage dropbox, ChangeManager changeManager, FileManager fileManager) {
 		boolean success = true;
 		String uid = votingInput.getUid(); // user who voted
 		long votingID = votingInput.getVotingID(); 
 		//boolean accepted = votingInput.getAccepted(); ???????
 		boolean cancel = votingInput.getCancel();
-		DBCollection votingUsersCollection = dbManager.getCollection("votingusers", VotingUser.class);
+		DBCollection votingUsersCollection = dbManager.getCollection(VOTING_USERS, VotingUser.class);
 		
 		if (!updateVotingUsers(votingInput)) {
 			return false;
@@ -447,7 +479,7 @@ public class VotingManager {
 		if (voting.isAccepted() != null) {
 			return false;
 		}
-		DBCollection votingCollection = dbManager.getCollection("voting", Voting.class);
+		DBCollection votingCollection = dbManager.getCollection(VOTING, Voting.class);
 		long votingID = voting.getID();
 		String action = voting.getAction();
 		String initiatorUid = voting.getInitiatorUid();
@@ -505,8 +537,8 @@ public class VotingManager {
 		if (voting.isAccepted() != null) {
 			return false;
 		}
-		DBCollection votingCollection = dbManager.getCollection("voting", Voting.class);
-		DBCollection votingUsersCollection = dbManager.getCollection("votingusers", VotingUser.class);
+		DBCollection votingCollection = dbManager.getCollection(VOTING, Voting.class);
+		DBCollection votingUsersCollection = dbManager.getCollection(VOTING_USERS, VotingUser.class);
 		boolean success = true;
 		long votingID = voting.getID();
 		String action = voting.getAction();
@@ -547,7 +579,7 @@ public class VotingManager {
 	}
 	
 	/**
-	 * A "Voting" is considered closed if the field isAccepted is not null. This method sets the isAccepted to the value of the passed parameter
+	 * A "Voting process" is considered closed if the field isAccepted is not null. This method sets the isAccepted to the value of the passed parameter
 	 */
 	private void closeVoting(DBCollection votingCollection, long votingID, boolean isAccepted, String errorMessage) {
 		BasicDBObject query = new BasicDBObject("_id", votingID);
@@ -570,7 +602,7 @@ public class VotingManager {
 	 * As we are closing the voting, it does not make sense to have outstanding votes.
 	 */
 	private void setVotedVotingUsers(long votingID) {
-		DBCollection votingUsersCollection = dbManager.getCollection("votingusers", VotingUser.class);
+		DBCollection votingUsersCollection = dbManager.getCollection(VOTING_USERS, VotingUser.class);
 		BasicDBObject query = new BasicDBObject("votingID", votingID);
 		try (DBCursor dbCursor = votingUsersCollection.find(query)) {
 			while (dbCursor.hasNext()) {
@@ -583,22 +615,30 @@ public class VotingManager {
 		}
 	}
 
-	// Could be useful in remotevoting?votingID=id
+	/**
+	 * Removes information from the votingusers collection based on the votingID -- the voting process ID
+	 * Could be useful in removevoting?votingID=id
+	 * @param votingID Voting process ID
+	 */
 	public void removeVotingUsers(long votingID) {		
-		DBCollection votingUsersCollection = dbManager.getCollection("votingusers", VotingUser.class);
+		DBCollection votingUsersCollection = dbManager.getCollection(VOTING_USERS, VotingUser.class);
 		BasicDBObject query = new BasicDBObject("votingID", votingID);
 		System.out.println("removing from votinguser documents with votingID = " + votingID);
 		votingUsersCollection.remove(query);
 	}
 
-	// Could still be useful -- when initiator removes it from the notification list.
+	/**
+	 * Removes information about the voting process from the voting collection, based on the votingID -- the voting process ID
+	 * Could be useful -- when initiator removes it from the notification list.
+	 * @param votingID
+	 */
 	public void removeVoting(long votingID) {
-		DBCollection votingCollection = dbManager.getCollection("voting", Voting.class);
+		DBCollection votingCollection = dbManager.getCollection(VOTING, Voting.class);
 		BasicDBObject query = new BasicDBObject("_id", votingID);
 		System.out.println("removing from voting documents with _id = " + votingID);
 		votingCollection.remove(query);
 	}
-
+	
 	private boolean isVotingClosed(Voting voting) {
 		String scheme = voting.getScheme();
 		int votesFor = voting.getVotesFor();

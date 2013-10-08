@@ -22,7 +22,10 @@ public class FileData {
 		return uid;
 	}
 	
-	// NOTE: prevention of object leaking. Long live COOP.
+	/**
+	 * Gets a copy of the list of <code>FileEntry</code>s.
+	 * @return List of <code>FileEntry</code>s.
+	 */
 	public List<FileEntry> getEntries() {
 		if (entries == null) {
 			return null;
@@ -34,25 +37,12 @@ public class FileData {
 		}
 		return result;
 	}
-	
+	/**
+	 * Adds an entry to the list.
+	 * @param entry Entry to add.
+	 */
 	public void addEntry(FileEntry entry) {
 		entries.add(entry);
-	}
-
-	public void sortEntries() {
-		Collections.sort(entries, new Comparator<FileEntry>() {
-			@Override
-			public int compare(FileEntry o1, FileEntry o2) {
-				return o1.getFilename().compareTo(o2.getFilename());
-			}
-		});
-	}
-
-	public void printEntries() {
-		for (FileEntry fileEntry : getEntries()) {
-			System.out.println(fileEntry.getPath() + "; " + (fileEntry.isDeleted() ? "deleted" : ""));
-		}
-		
 	}
 	
 }

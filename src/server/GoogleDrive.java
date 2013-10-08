@@ -62,7 +62,11 @@ import server.model.User;
 import server.utils.DateFormatter;
 import server.utils.FilePath;
 import spark.Session;
-
+/**
+ * CloudStorage implementation for Google Drive.
+ * @author soleksiy
+ *
+ */
 public class GoogleDrive implements CloudStorage {
 	
 	private static final String CLIENT_ID = "1026087715240-u1f3av2tuv8dolctuf5t4pnjno75092r.apps.googleusercontent.com"; //"1026087715240.apps.googleusercontent.com";
@@ -145,7 +149,7 @@ public class GoogleDrive implements CloudStorage {
 		scopes.add(DriveScopes.DRIVE);
 		return scopes;
 	}
-	
+		
 	@Override
 	public FileInfo getFileInfo(String path, String rev, FileManager fileManager) {
 		System.out.println("GoogleDrive getFileInfo -- not implemented");
@@ -498,34 +502,6 @@ public class GoogleDrive implements CloudStorage {
 		return tree;	
 	}
 		
-	/**
-	 * Prints all files with complete paths
-	 */
-	private void print2(FileTree tree) {
-		FileNode root = tree.getRoot();
-		List<FileNode> childNodes = root.getChildNodes();
-		if (childNodes != null) {
-			for (FileNode childNode : root.getChildNodes()) {
-				printRec2(childNode, new StringBuffer("/"));
-			}
-		}
-	}
-	private void printRec2(FileNode node, StringBuffer pathBuffer) {
-		System.out.print(pathBuffer.toString() + node.getFile().getTitle());
-		Boolean trashed = node.getFile().getLabels().getTrashed();
-		if (trashed != null && trashed == true) { 
-			System.out.println(" -- Trashed");
-		}
-		else {
-			System.out.println();
-		}
-		if (node.getChildNodes() != null) {
-			for (FileNode childNode: node.getChildNodes()) {
-				printRec2(childNode, new StringBuffer(pathBuffer.toString()).append(node.getFile().getTitle()).append("/"));
-			}
-		}
-	}
-		
 	private Credential buildGoogleCredential() {
 		HttpTransport httpTransport = new NetHttpTransport();
 		JacksonFactory jsonFactory = new JacksonFactory();
@@ -697,8 +673,6 @@ public class GoogleDrive implements CloudStorage {
 		String parentToPath = FilePath.getParentPath(toPath);
 		FileEntry parent = fileManager.getFileEntry(userUid, parentToPath);
 		String parentId = parent.getFileId();
-
-		//fileManager.listChildrenForPath(userUid, path, includeDeleted, markLastSeen)
 		
 		if (action == CopyMoveAction.COPY) {
 			System.out.println("copying " + fromPath + " to " + parentToPath);
@@ -829,6 +803,8 @@ public class GoogleDrive implements CloudStorage {
 	 * Exchanges the code received from Google OAuth for a credential. Stores Credential in session.
 	 * Gets user information from credential. Returns the user. 
 	 * This method is only relevant for GoogleDrive.
+	 * @param code Code received from Google OAuth
+	 * @return The authenticated user
 	 */
 	public User finishAuthentication(String code) throws IOException {
 		GoogleAuthorizationCodeFlow flow = getFlow();
@@ -900,7 +876,9 @@ public class GoogleDrive implements CloudStorage {
 		}
 	}
 	
-	// NOTE: Assume that by the time we call this method, the session has been set and is not null;
+	/**
+	 * NOTE: Assume that by the time we call this method, the session has been set and is not null;
+	 */
 	public JSONObject tryListFiles(String uid, String serverName, int port, String path, FileManager fileManager) {
 		if (uid != null) {
 			System.out.println("UID is not null, provider is google");
@@ -960,10 +938,36 @@ public class GoogleDrive implements CloudStorage {
 			System.out.println("Cannot find folder at " + path + " for user " + owner.getDisplayName());
 		}
 	}
-
 	
 	/**************************************************Debugging helpers*****************************/
 	
+	/**
+	 * Prints all files with complete paths
+	 */
+	private void print2(FileTree tree) {
+		FileNode root = tree.getRoot();
+		List<FileNode> childNodes = root.getChildNodes();
+		if (childNodes != null) {
+			for (FileNode childNode : root.getChildNodes()) {
+				printRec2(childNode, new StringBuffer("/"));
+			}
+		}
+	}
+	private void printRec2(FileNode node, StringBuffer pathBuffer) {
+		System.out.print(pathBuffer.toString() + node.getFile().getTitle());
+		Boolean trashed = node.getFile().getLabels().getTrashed();
+		if (trashed != null && trashed == true) { 
+			System.out.println(" -- Trashed");
+		}
+		else {
+			System.out.println();
+		}
+		if (node.getChildNodes() != null) {
+			for (FileNode childNode: node.getChildNodes()) {
+				printRec2(childNode, new StringBuffer(pathBuffer.toString()).append(node.getFile().getTitle()).append("/"));
+			}
+		}
+	}
 	private void getFileMetadataByID(Drive service) throws IOException {
 		System.out.println("getting file by metadata");
 		String id = "1jg__xY2KArcLyW5kamsupXpKutRZt__ysmcBPP1EV64";

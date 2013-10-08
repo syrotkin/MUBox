@@ -4,9 +4,8 @@ import java.util.Date;
 
 import server.data.NoWarningJSONObject;
 
-
 /**
- * For displaying activities in the Activity View 
+ * Encapsulates a single file activity, for displaying activities in the Activity View 
  */
 public class FileActivity extends NoWarningJSONObject {
 	

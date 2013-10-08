@@ -8,25 +8,19 @@ import org.joda.time.DateTime;
 import org.joda.time.Days;
 import org.joda.time.Hours;
 import org.joda.time.Minutes;
-
+/**
+ * Formats a timestamp as a number of "minutes ago" or "hours ago" if it is within 1 day. Otherwise, formats it as dd.MM.yyyy h:mm a. 
+ * @author soleksiy
+ *
+ */
 public class DateFormatter {
 	private static DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy h:mm a"); 
-	//private static final long DAY_IN_MILLIS = 1000 * 3600 * 24;
-	//private static final long HOUR_IN_MILLIS = 1000 * 3600;
 	
 	public static String formatDate(Date date) {
 		String result;
 		DateTime dt = new DateTime(date);
 		DateTime now = new DateTime(new Date());
-		
-		/*
-		Date nowDate = new Date();
-		long millisDifference = nowDate.getTime() - date.getTime();
-		if (millisDifference < DAY_IN_MILLIS) {
-			int hoursDifference = (int)(millisDifference/ HOUR_IN_MILLIS);
-		}
-		*/
-		
+			
 		int days = Days.daysBetween(dt, now).getDays();
 		if (days < 1) {
 			int hours = Hours.hoursBetween(dt, now).getHours();
@@ -41,8 +35,6 @@ public class DateFormatter {
 		else {
 			result = dateFormat.format(date);
 		}
-		
-		
 		return result;
 		
 	}

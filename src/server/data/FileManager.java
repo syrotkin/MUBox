@@ -29,8 +29,11 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
-
-
+/**
+ * Class for operations on the <code>filedata</code> collection, which stores file metadata.
+ * @author soleksiy
+ *
+ */
 public class FileManager {
 	private static final String FILEDATA = "filedata";
 	private static final String DELTA_CURSORS = "deltacursors";
@@ -44,7 +47,11 @@ public class FileManager {
 		this.userManager = um;
 		this.sharedFolderManager = shfm;
 	}
-
+	/**
+	 * Gets delta cursor (Dropbox-specific) for a given user UID. If the user already retrieved delta data before, delta cursor is not null.
+	 * @param uid
+	 * @return Delta cursor
+	 */
 	public String getDeltaCursor(String uid) {
 		DBCollection deltaCursors =  dbManager.getCollection(DELTA_CURSORS);
 		BasicDBObject query = new BasicDBObject("uid", uid);
@@ -60,32 +67,11 @@ public class FileManager {
 		}
 		return deltaCursor;
 	}
-	
-	public Long getChangeId(String uid) {
-		DBCollection deltaCursors = dbManager.getCollection(DELTA_CURSORS);
-		BasicDBObject query = new BasicDBObject("uid", uid);
-		DBObject result = deltaCursors.findOne(query);
-		if (result == null) {
-			return null;
-		}
-		return (Long)result.get("changeId");
-	} 
-	
-	public void saveChangeId(String uid, long newChangeID) {
-		System.out.println("saving change ID");
-		DBCollection deltaCursors = dbManager.getCollection(DELTA_CURSORS);
-		BasicDBObject query = new BasicDBObject("uid", uid);
-		DBObject matchingDoc = deltaCursors.findOne(query);
-		if (matchingDoc == null) {
-			query.append("changeId", newChangeID);
-			deltaCursors.save(query);
-		}
-		else {
-			matchingDoc.put("changeId", newChangeID);
-			deltaCursors.save(matchingDoc);
-		}
-	}
-
+	/**
+	 * Saves a given delta cursor (Dropbox-specific) in the database.
+	 * @param uid User UID
+	 * @param deltaCursor Delta cursor to save
+	 */
 	public void saveDeltaCursor(String uid, String deltaCursor) {
 		DBCollection deltaCursors = dbManager.getCollection(DELTA_CURSORS);
 		BasicDBObject query = new BasicDBObject("uid", uid);
@@ -107,6 +93,40 @@ public class FileManager {
 			// TODO: proper handling
 			System.err.println(e.getMessage());
 			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Gets file change ID (Google Drive-specific) -- the ID of the last timestamp when MUBox requested Google Drive change data.
+	 * @param uid User UID
+	 * @return Change ID
+	 */
+	public Long getChangeId(String uid) {
+		DBCollection deltaCursors = dbManager.getCollection(DELTA_CURSORS);
+		BasicDBObject query = new BasicDBObject("uid", uid);
+		DBObject result = deltaCursors.findOne(query);
+		if (result == null) {
+			return null;
+		}
+		return (Long)result.get("changeId");
+	} 
+	/**
+	 * Saves change ID (Google Drive-specific).
+	 * @param uid User UID
+	 * @param newChangeID New change ID
+	 */
+	public void saveChangeId(String uid, long newChangeID) {
+		System.out.println("saving change ID");
+		DBCollection deltaCursors = dbManager.getCollection(DELTA_CURSORS);
+		BasicDBObject query = new BasicDBObject("uid", uid);
+		DBObject matchingDoc = deltaCursors.findOne(query);
+		if (matchingDoc == null) {
+			query.append("changeId", newChangeID);
+			deltaCursors.save(query);
+		}
+		else {
+			matchingDoc.put("changeId", newChangeID);
+			deltaCursors.save(matchingDoc);
 		}
 	}
 
@@ -177,37 +197,32 @@ public class FileManager {
 			}
 		}
 	}
-
-	public FileEntry getFileEntry(String id) {
-		DBCollection fileDataCollection = dbManager.getCollection(FILEDATA, FileEntry.class);
-		BasicDBObject query = new BasicDBObject("_id", new ObjectId(id));
-		FileEntry result = (FileEntry)fileDataCollection.findOne(query);
-		return result;
-	}
-
+	/**
+	 * Gets file entry from the database by user UID and path to the file
+	 * @param userUid User UID
+	 * @param path Path to file
+	 * @return The requested FileEntry
+	 */
 	public FileEntry getFileEntry(String userUid, String path) {
 		DBCollection fileDataCollection = dbManager.getCollection(FILEDATA, FileEntry.class);
 		BasicDBObject query = new BasicDBObject("uid", userUid).append("path", path);
 		FileEntry dbResult = (FileEntry)fileDataCollection.findOne(query); // TODO: This is findOne() Are you sure??
 		return dbResult;
 	}
-	/*
-	public String getFileId(String path, String uid) {
-		DBCollection fileDataCollection = dbManager.getCollection(FILEDATA, FileEntry.class);
-		BasicDBObject query = new BasicDBObject("uid", uid).append("path", path);
-	}
-	*/
-
-	// Used in case of restore. 
-	// Removes from the database the version that was restored to the previous version.
-	// A design choice
-	// Can also hide it and have some way of showing it if needed.
+	/**
+	 * Used in case of restore. 
+	 * Removes from the database the version that was restored to the previous version.
+	 * A design choice
+	 * Can also hide it and have some way of showing it if needed.
+	 * @param entry
+	 * @param uid
+	 */
 	public void removeFileEntry(FileEntry entry, String uid) {
 		BasicDBObject query = new BasicDBObject("uid", uid).append("lowercasePath", entry.getPath().toLowerCase());
 		DBCollection fileDataCollection = dbManager.getCollection(FILEDATA);
 		fileDataCollection.remove(query);
 	}
-
+	
 	private void updateFile(FileEntry entry, String userUid, FileEntry setter) {
 		BasicDBObject query = new BasicDBObject("uid", userUid).append("path", entry.getPath());
 		DBCollection fileDataCollection = dbManager.getCollection(FILEDATA, FileEntry.class);
@@ -246,19 +261,31 @@ public class FileManager {
 		}
 		return setter;
 	}
-
+	/**
+	 * Updates a FileEntry to set it shared.
+	 * @param entry FileEntry to update
+	 * @param uid User UID
+	 */
 	public void updateFileSetShared(FileEntry entry, String uid) {
 		FileEntry setter = getSharedSetter(entry);
 		updateFile(entry, uid, setter);
 	}
-
+	/**
+	 * Updates a file to set it deleted.
+	 * DeletionEntry may not have the correct _id in the context
+ 	 * if we are updating it for ALL users (shared folder)
+	 * @param deletionEntry FileEntry to delete
+	 * @param uid User UID
+	 */
 	public void updateFileSetDeleted(FileEntry deletionEntry, String uid) {
-		// deletionEntry may not have the correct _id in the context
-		// if we are updating it for ALL users (shared folder)
 		FileEntry setter = getDeletionSetter(deletionEntry);		
 		updateFile(deletionEntry, uid, setter);
 	}
-
+	/**
+	 * Inserts a new FileEntry.
+	 * @param entry FileEntry to insert.
+	 * @param userUid User UID.
+	 */
 	public void insertNewFileEntry(FileEntry entry, String userUid) {
 		// TODO Leave creationDate as is, it has already been set.
 		// INSERT into filedata at path entry.path, with all the necessary data
@@ -308,7 +335,7 @@ public class FileManager {
 		}
 	}
 
-	/********************************** Ancestors *************************************************/
+	/********************************** Begin Ancestors *************************************************/
 
 	/**
 	 *  In case a file is inserted/restored in a folder hierarchy where some ancestors may be marked as deleted, we 
@@ -396,9 +423,15 @@ public class FileManager {
 		fileDataCollection.updateMulti(query, updater);
 	}
 
-	// Gets the part of the path that is appended to the "shared root path" to form the full path
-	// e.g. given "/Sharing/File.txt", and "/Sharing", gets /File.txt 
-	// The part /File.txt will be the same for all users
+	/**
+	 * Gets the part of the path that is appended to the "shared root path" to form the full path
+	 * e.g. given "/Sharing/File.txt", and "/Sharing", gets /File.txt
+	 * The part /File.txt will be the same for all users
+	 * @param sharedFolders
+	 * @param userUid
+	 * @param userFullPath
+	 * @return Path to the file relative to the shared folder root
+	 */
 	public String getPathToFileRelativeToSharedRoot(List<SharedFolder> sharedFolders, String userUid, String userFullPath) {
 		String userRootPath = null;
 		for (SharedFolder folderInfo: sharedFolders) {
@@ -418,7 +451,14 @@ public class FileManager {
 		}
 	}
 	/************************************************ End Ancestors ****************************************/
-
+	/**
+	 * Lists files
+	 * @param path
+	 * @param forceRefreshDelta
+	 * @param user
+	 * @param cloudStorage
+	 * @return JSON object that contains a file list.
+	 */
 	public JSONObject listFiles(String path, boolean forceRefreshDelta, User user, CloudStorage cloudStorage) {
 		// check if data is in the database.
 		//System.out.println("Inside listFiles. cloudStorage: " + cloudStorage.getClass());
@@ -721,22 +761,39 @@ public class FileManager {
 		FileEntry setter = getLastSeenSetter(date);
 		updateFile(current, current.getUid(), setter);
 	}
-
-	// gets data for given path, its immediate children, but not subdirectories. It is like /home2/path --> listing path
-	// omits isDeleted entries
+	/**
+	 * Gets data for given path, its immediate children, but not subdirectories. It is like /home2/path --> listing path
+	 * @param userUid
+	 * @param path
+	 * @param includeDeleted True if you also want to include deleted/shadow files.
+	 * @param markLastSeen True if you want to mark the files as last seen.
+	 * @return FileData object that contains a file list.
+	 */
 	public FileData listChildrenForPath(String userUid, String path, boolean includeDeleted, boolean markLastSeen) {
 		String pathPart = "/".equals(path) ? "/" : path + "/";
 		String escapedPath = Pattern.quote(pathPart);
 		String regex = "^" +escapedPath + "[^/]+$";
 		return listFiles(userUid, regex, includeDeleted, true, false, markLastSeen);
 	}
-
+	/**
+	 * Lists all the descendants of a given file, no matter how deep in the hierarchy.
+	 * @param userUid 
+	 * @param path
+	 * @param includeDeleted True if you also want to list deleted/shadow files.
+	 * @return FileData object that contains a file list.
+	 */
 	public FileData listDescendants(String userUid, String path, boolean includeDeleted) {
 		String escapedPath = Pattern.quote(path);
 		String regex = "^" + escapedPath + "/.+$";
 		return listFiles(userUid, regex, includeDeleted, false, false, false);
 	}
-
+	/**
+	 * Lists a given entry (folder) as well as its descendants.
+	 * @param userUid
+	 * @param path
+	 * @param includeDeleted True if you want to include deleted/shadow files
+	 * @return FileData object that contains a file list.
+	 */
 	public FileData listEntryAndDescendants(String userUid, String path, boolean includeDeleted) {
 		//String pathPart = "/".equals(path) ? "/" : path;
 		String escapedPath = Pattern.quote(path);
@@ -744,7 +801,11 @@ public class FileManager {
 		return listFiles(userUid, regex, includeDeleted, false, false, false);
 	}
 
-	// folder: {uid, path}, adding seq to it
+ 	/**
+	 * Marks folders as shared
+	 * folder is originally only {uid, path}. Here we are adding seq to this representation.
+	 * @param folders
+	 */
 	public void insertSharedFolders(List<SharedFolder> folders) {
 		System.out.println("enter FileManager.insertSharedFolders");
 		DBCollection fileDataCollection = dbManager.getCollection(FILEDATA, FileEntry.class);
@@ -811,58 +872,6 @@ public class FileManager {
 							entry.setOwner(owner);
 						}
 						fileDataCollection.save(entry);
-					}
-				}
-			}
-		}
-	}
-
-	// folder: {uid, path}, adding seq to it
-	public void insertSharedFolders_OLD(List<SharedFolder> folders) {
-		System.out.println("enter FileManager.insertSharedFolders");
-		DBCollection fileDataCollection = dbManager.getCollection(FILEDATA, FileEntry.class);
-		long newID = sharedFolderManager.insertSharedFolders(folders);
-		
-	
-		for (SharedFolder folder : folders) {
-			// insert into filedata that this folder is shared
-			BasicDBObject query = new BasicDBObject("uid", folder.getUid()).append("path", folder.getPath());
-			
-			try (DBCursor dbCursor = fileDataCollection.find(query)) {
-				if (dbCursor.count() == 0) {
-					System.out.println("Inserting new row in filedata: " + query.toString());
-					String path = (String)query.get("path");
-					String filename = FilePath.getFileName(path);
-					query.put("filename", filename);
-					query.put("lowercasePath", path.toLowerCase());
-					query.put("isDeleted", false);
-					query.put("isDir", true);
-					query.put("isShared", true);
-					query.put("sharedFolderID", newID);
-					String owner = folder.getOwner();
-					if (owner!=null) {
-						query.put("owner", folder.getOwner());
-					}
-					fileDataCollection.insert(query);
-				}
-				else {
-					while (dbCursor.hasNext()) {
-						FileEntry next = (FileEntry)dbCursor.next();
-						System.out.println("marking as shared: uid:" + (String)next.get("uid")  + ", path: " + (String)next.get("path"));
-						next.setShared(true);
-						next.setSharedFolderID(newID);
-						String owner = folder.getOwner();
-						if (owner != null) {
-							next.setOwner(owner);
-						}
-						fileDataCollection.save(next);
-						// Making all descendants shared, too.
-						FileData descendants = listDescendants(folder.getUid(), next.getPath(), true);
-						for (FileEntry descendant : descendants.getEntries()) {
-							descendant.setShared(true);
-							descendant.setOwner(owner);
-							updateFileSetShared(descendant, descendant.getUid());
-						}
 					}
 				}
 			}

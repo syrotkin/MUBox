@@ -1,7 +1,11 @@
 package server.data;
 
 import org.json.simple.JSONObject;
-
+/**
+ * Subclass of {@link JSONObject} that suppresses the warnings
+ * @author soleksiy
+ *
+ */
 public class NoWarningJSONObject extends JSONObject {
 
 	/**
