@@ -2,6 +2,7 @@ package server;
 
 import server.data.UserManager;
 import server.model.User;
+import server.settings.Settings;
 import spark.Request;
 import spark.Session;
 
@@ -13,10 +14,20 @@ import spark.Session;
 public class CloudFactory {
 	
 	private UserManager userManager;
+	private Settings settings;
 	private Session session;
 	
-	public CloudFactory(UserManager userManager) {
+	public CloudFactory(UserManager userManager, Settings settings) {
 		this.userManager = userManager;
+		this.settings = settings;
+	}
+	
+	/**
+	 * Sets server session
+	 * @param session Server session
+	 */
+	public void setServerSession(Session session) {
+		this.session = session;
 	}
 	
 	private CloudStorage getCloudStorage(String provider) {
@@ -27,10 +38,10 @@ public class CloudFactory {
 			provider = Constants.Provider.DROPBOX;
 		}
 		if (Constants.Provider.DROPBOX.equalsIgnoreCase(provider)) {
-			cloudStorage = new Dropbox(userManager);
+			cloudStorage = new Dropbox(userManager, settings.dropboxSettings);
 		}
 		else if (Constants.Provider.GOOGLE.equalsIgnoreCase(provider)) {
-			cloudStorage = new GoogleDrive(userManager);
+			cloudStorage = new GoogleDrive(userManager, settings.googleDriveSettings);
 		}
 		else {
 			System.out.println(provider + " is not a valid provider");
@@ -52,14 +63,7 @@ public class CloudFactory {
 		return getCloudStorage(provider);
 	}
 
-	/**
-	 * Sets server session
-	 * @param session Server session
-	 */
-	public void setServerSession(Session session) {
-		this.session = session;
-	}
-
+	
 	/**
 	 * Gets cloud storage implementation by user UID.
 	 * @param uid User UID

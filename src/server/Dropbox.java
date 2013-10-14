@@ -27,6 +27,7 @@ import server.enums.CopyMoveAction;
 import server.model.FileData;
 import server.model.FileEntry;
 import server.model.User;
+import server.settings.DropboxSettings;
 import server.utils.DateFormatter;
 import server.utils.FilePath;
 import spark.Session;
@@ -51,9 +52,9 @@ public class Dropbox implements CloudStorage {
 	private DropboxAuthorizationManager authorizationManager;
 	private UserManager userManager;
 	
-	public Dropbox(UserManager userManager) {
+	public Dropbox(UserManager userManager, DropboxSettings dropboxSettings) {
 		this.userManager = userManager;
-		authorizationManager = new DropboxAuthorizationManager();
+		authorizationManager = new DropboxAuthorizationManager(dropboxSettings);
 	}
 	
 	private Session session;

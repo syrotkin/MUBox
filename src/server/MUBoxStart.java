@@ -4,12 +4,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Properties;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
@@ -37,6 +33,8 @@ import server.model.FileEntry;
 import server.model.SharedFolder;
 import server.model.User;
 import server.model.VotingInput;
+import server.settings.Settings;
+import server.settings.SettingsManager;
 import server.utils.FilePath;
 import spark.*;
 
@@ -46,10 +44,6 @@ import spark.*;
  *
  */
 public class MUBoxStart {
-	
-	private static final String DISABLE_ACTIVITY_VIEW = "disableActivityView";
-	private static final String DISABLE_SHADOW = "disableShadow";
-	private static final String DISABLE_VOTING = "disableVoting";
 	
 	private static int getPort(String[] args) {
 		int result = -1;
@@ -68,42 +62,20 @@ public class MUBoxStart {
 		return result;
 	}
 
-	private static Settings readProperties() {
-		Properties prop = new Properties();
-		boolean disableActivityView;
-		boolean disableShadow;
-		boolean disableVoting;
-		try {
-			prop.load(new FileInputStream("config.properties"));
-			disableActivityView = Boolean.parseBoolean(prop.getProperty(DISABLE_ACTIVITY_VIEW, "false"));
-			disableShadow = Boolean.parseBoolean(prop.getProperty(DISABLE_SHADOW, "false"));
-			disableVoting = Boolean.parseBoolean(prop.getProperty(DISABLE_VOTING, "false"));
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			disableActivityView = false;
-			disableShadow = false;
-			disableVoting = false;
-		} catch (IOException e) {
-			e.printStackTrace();
-			disableActivityView = false;
-			disableShadow = false;
-			disableVoting = false;
-		}
-		return new Settings(disableActivityView, disableShadow, disableVoting);
-	}
 	/**
 	 * Entry point of the application. Starts the Spark server, sets the port, establishes the server routes that react to the user input.
 	 * @param args Arguments. Accepts port number --port <number>. By default, port is 9090.
 	 */
 	public static void main(String[] args) {
-		final Settings settings = readProperties();
+		SettingsManager settingsManager = new SettingsManager();
+		final Settings settings = settingsManager.readProperties();
 		final DatabaseManager dbManager = DatabaseManager.getInstance();
 		final UserManager userManager = new UserManager(dbManager);
 		final SharedFolderManager sharedFolderManager = new SharedFolderManager(dbManager);
 		final FileManager fileManager = new FileManager(dbManager, userManager, sharedFolderManager);
 		final ChangeManager changeManager = new ChangeManager(sharedFolderManager, fileManager);
 		final VotingManager votingManager = new VotingManager(dbManager, userManager);
-		final CloudFactory cloudFactory = new CloudFactory(userManager);
+		final CloudFactory cloudFactory = new CloudFactory(userManager, settings);
 
 		final VotingEvaluator votingEvaluator = new VotingEvaluator(votingManager, changeManager, cloudFactory, fileManager);
 		votingEvaluator.start();
@@ -130,9 +102,9 @@ public class MUBoxStart {
 			@Override
 			public Object handle(Request request, Response response) {
 				NoWarningJSONObject result = new NoWarningJSONObject();
-				result.put("disableActivityView", settings.disableActivityView);
-				result.put("disableShadow", settings.disableShadow);
-				result.put("disableVoting", settings.disableVoting);
+				result.put("disableActivityView", settings.clientSideSettings.disableActivityView);
+				result.put("disableShadow", settings.clientSideSettings.disableShadow);
+				result.put("disableVoting", settings.clientSideSettings.disableVoting);
 				return result;
 			}
 		});
@@ -146,7 +118,7 @@ public class MUBoxStart {
 				String code = request.queryParams("code");
 				if (code != null) {
 					try {
-						GoogleDrive cloud = new GoogleDrive(userManager);
+						GoogleDrive cloud = new GoogleDrive(userManager, settings.googleDriveSettings);
 						cloud.setServerSession(request.session());
 						User user = cloud.finishAuthentication(code);
 						System.out.println("got user: " + user.getUid() + ", name: " + user.getDisplayName());
@@ -348,7 +320,7 @@ public class MUBoxStart {
 		Spark.get(new Route("/delta") {
 			@Override
 			public Object handle(Request request, Response response) {
-				Dropbox dropbox = new Dropbox(userManager);
+				Dropbox dropbox = new Dropbox(userManager, settings.dropboxSettings);
 				dropbox.setServerSession(request.session());
 				return dropbox.delta(fileManager);
 			}

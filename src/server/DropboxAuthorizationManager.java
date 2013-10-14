@@ -15,6 +15,7 @@ import com.dropbox.client2.session.WebAuthSession.WebAuthInfo;
 import server.data.NoWarningJSONObject;
 import server.data.UserManager;
 import server.model.User;
+import server.settings.DropboxSettings;
 import spark.Session;
 
 /**
@@ -25,11 +26,13 @@ import spark.Session;
 public class DropboxAuthorizationManager {
 	
 	// OleksiyApp2
-	private final String APP_KEY = "aat3ba7bvoenafk";
-	private final String APP_SECRET = "wsonxwq5hp66eue"; 
-	private static final AccessType ACCESS_TYPE = AccessType.DROPBOX;
-	private static final String CALLBACK_SUFFIX = "/muboxindex.html";
+	private static final AccessType DROPBOX_ACCESS_TYPE = AccessType.DROPBOX;
 	private Session session;
+	
+	private DropboxSettings dropboxSettings;
+	public DropboxAuthorizationManager(DropboxSettings dropboxSettings) {
+		this.dropboxSettings = dropboxSettings;
+	}
 	/**
 	 * Sets web server session	
 	 * @param session Web server (Spark) session.
@@ -125,7 +128,7 @@ public class DropboxAuthorizationManager {
 		WebAuthInfo webAuthInfo = null;
 		try {
 			webAuthSession = initWebAuthSession(); // init as opposed to get -- ?? to clear the possibly set wrong tokens?
-			String url = "http://" + serverName + ":" + port + CALLBACK_SUFFIX;
+			String url = "http://" + serverName + ":" + port + dropboxSettings.callbackSuffix;
 			webAuthInfo = webAuthSession.getAuthInfo(url);
 		} catch (DropboxException e) {
 			System.err.println(e.getMessage());
@@ -159,8 +162,8 @@ public class DropboxAuthorizationManager {
 	 * @return New <code>WebAuthSession</code>
 	 */
 	public  WebAuthSession initWebAuthSession() {
-		AppKeyPair appKeyPair = new AppKeyPair(APP_KEY, APP_SECRET);
-		WebAuthSession authSession = new WebAuthSession(appKeyPair, ACCESS_TYPE);
+		AppKeyPair appKeyPair = new AppKeyPair(dropboxSettings.appKey, dropboxSettings.appSecret);
+		WebAuthSession authSession = new WebAuthSession(appKeyPair, DROPBOX_ACCESS_TYPE);
 		return authSession;
 	}
 	/**

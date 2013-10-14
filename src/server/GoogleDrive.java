@@ -59,6 +59,7 @@ import server.model.FileEntry;
 import server.model.FileNode;
 import server.model.FileTree;
 import server.model.User;
+import server.settings.GoogleDriveSettings;
 import server.utils.DateFormatter;
 import server.utils.FilePath;
 import spark.Session;
@@ -69,26 +70,25 @@ import spark.Session;
  */
 public class GoogleDrive implements CloudStorage {
 	
-	private static final String CLIENT_ID = "1026087715240-u1f3av2tuv8dolctuf5t4pnjno75092r.apps.googleusercontent.com"; //"1026087715240.apps.googleusercontent.com";
-	private static final String CLIENT_SECRET = "46xdAq-nzBmwjEDs5MYDdRe9"; //"OhtbkfRlnZVqo3wS4Ea-yG6b";
-	private static final String APP_NAME = "Google Drive App1";
-	
-	protected static final String GOOGLE_REDIRECT_URI = "http://benwyvis.inf.ethz.ch:8080/oauth2callback"; // "http://benwyvis.inf.ethz.ch:8080/oauth2callback"; //"http://localhost:8080/oauth2callback"; //"http://localhost:8080/muboxindex.html"; //"http://mubox.uni.me/muboxindex.html"; //"http://mubox.uni.me/oauth2callback";
-	protected static final String GOOGLE_CLIENT_ID = "1026087715240-u1f3av2tuv8dolctuf5t4pnjno75092r.apps.googleusercontent.com";
-	protected static final String GOOGLE_CLIENT_SECRET = "46xdAq-nzBmwjEDs5MYDdRe9";
-	
 	private static final String GOOGLE_FOLDER_TYPE = "application/vnd.google-apps.folder";
-	
+		
+	/**
+	 * Not required for Google Drive.
+	 * @param uid User UID.
+	 */
 	private String uid;
 	@Override
-	public void setUid(String uid) {
+	public void setUid(String uid) {		
 		this.uid = uid;
 	}
 	
 	private GoogleAuthorizationCodeFlow flow; 
 	private UserManager userManager;
-	public GoogleDrive(UserManager userManager) {
+
+	private GoogleDriveSettings googleDriveSettings;
+	public GoogleDrive(UserManager userManager, GoogleDriveSettings googleDriveSettings) {
 		this.userManager = userManager;
+		this.googleDriveSettings = googleDriveSettings;
 	}
 
 	private Session session;
@@ -117,7 +117,7 @@ public class GoogleDrive implements CloudStorage {
 	private String getAuthorizationUrl(GoogleAuthorizationCodeFlow flow, String state) {
 		try {					
 			GoogleAuthorizationCodeRequestUrl urlBuilder =
-					flow.newAuthorizationUrl().setRedirectUri(GOOGLE_REDIRECT_URI).setState(state);
+					flow.newAuthorizationUrl().setRedirectUri(googleDriveSettings.redirectURI).setState(state);
 			//urlBuilder.set("user_id", emailAddress); // THIS IS IN THE URL. DON'T CONFUSE WITH THE DB.
 			return urlBuilder.build();}
 		catch (Exception ex) {
@@ -133,7 +133,7 @@ public class GoogleDrive implements CloudStorage {
 			HttpTransport httpTransport = new NetHttpTransport();
 			JsonFactory jsonFactory = new JacksonFactory();
 			flow = new GoogleAuthorizationCodeFlow.Builder(
-					httpTransport, jsonFactory, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, scopes)
+					httpTransport, jsonFactory, googleDriveSettings.clientID, googleDriveSettings.clientSecret, scopes)
 			//.setAccessType("online") // original
 			.setAccessType("offline") 			
 			//.setApprovalPrompt("auto").build(); // original
@@ -508,7 +508,7 @@ public class GoogleDrive implements CloudStorage {
 		GoogleCredential credential  = new GoogleCredential.Builder()
 		.setJsonFactory(jsonFactory)
 		.setTransport(httpTransport)
-		.setClientSecrets(CLIENT_ID, CLIENT_SECRET)
+		.setClientSecrets(googleDriveSettings.clientID, googleDriveSettings.clientSecret)
 		.build();
 		return credential;
 	}
@@ -556,11 +556,11 @@ public class GoogleDrive implements CloudStorage {
 		return createServiceInstance(credential);
 	}
 	
-	private static Drive createServiceInstance(Credential credential) {
+	private Drive createServiceInstance(Credential credential) {
 		HttpTransport httpTransport = new NetHttpTransport();
 		JsonFactory jsonFactory = new JacksonFactory();
 		Drive service = new Drive.Builder(httpTransport, jsonFactory, credential)
-		.setApplicationName(APP_NAME).build();
+		.setApplicationName(googleDriveSettings.appName).build();
 		return service;
 	}
 	
@@ -809,7 +809,7 @@ public class GoogleDrive implements CloudStorage {
 	public User finishAuthentication(String code) throws IOException {
 		GoogleAuthorizationCodeFlow flow = getFlow();
 		GoogleTokenResponse tokenResponse = flow.newTokenRequest(code)
-				.setRedirectUri(GOOGLE_REDIRECT_URI).execute();
+				.setRedirectUri(googleDriveSettings.redirectURI).execute();
 		Credential credential = buildGoogleCredential();	
 		credential.setFromTokenResponse(tokenResponse);
 		storeInSession(Constants.GOOGLE_CREDENTIAL_SESSION_KEY, credential);
